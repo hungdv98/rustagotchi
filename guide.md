@@ -198,9 +198,11 @@ application error.
 
 1. Let both founders reach the adult life stage and keep them healthy.
 2. From **Home**, open **Breeding**.
-3. Use **Next parent A** and **Next parent B** to choose distinct parents.
+3. Review each parent's portrait, species, level, age, and eligibility state.
+   Use **Change Parent A** and **Change Parent B** to choose a distinct pair.
 4. Select **Breed selected pair**.
-5. Return after incubation and select **Hatch egg** when it becomes available.
+5. Follow the nursery's remaining-time label and incubation progress bar.
+   Return when it reports **Ready to hatch**, then select **Hatch egg**.
 
 One simulation tick is one game minute. Pets become adults at seven in-game
 days, and normal egg incubation takes two in-game days. The desktop advances
@@ -421,7 +423,7 @@ frame. By default the artifact is written to
 the real Windows window stack and Linux Xvfb/Mesa stack, then uploads both PNGs.
 
 To capture another screen, set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`,
-`pet-creation`, `battle`, or `battle-result`. In PowerShell:
+`pet-creation`, `battle`, `battle-result`, `breeding`, or `breeding-egg`. In PowerShell:
 
 ```powershell
 $env:RUSTAGOTCHI_RENDER_SCREEN = "pet-status"

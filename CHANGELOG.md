@@ -36,6 +36,9 @@ changes are called out under **Saves** below.
 
 ### Changed — desktop presentation
 
+- Breeding is now a visual nursery with portrait-based parent cards, age
+  eligibility cues, in-card selection controls, a dedicated egg panel, compact
+  incubation time, progress bar, and contextual breed/hatch actions.
 - Pet feeding now uses a two-level care card with the primary action and the
   number of apple slices available, plus clearer full/empty-inventory states.
 - Success and error notices now render as distinct bordered banners. Routine

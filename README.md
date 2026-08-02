@@ -37,6 +37,10 @@ For a complete setup and gameplay walkthrough, see [guide.md](guide.md).
 
 ![Battle results with winner, coin rewards, level-up, and XP progress](docs/images/battle-arena.png)
 
+### Breeding nursery
+
+![Parent cards and an incubating egg in the Breeding nursery](docs/images/breeding-nursery.png)
+
 ## Getting started
 
 Prerequisites:
@@ -130,9 +134,9 @@ Run the self-closing rendered-window verifier locally with:
 cargo run -p rustagotchi-desktop --bin render-verify
 ```
 
-Set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`, `pet-creation`, `battle`, or
-`battle-result` to
-validate those layouts instead of the Home gallery.
+Set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`, `pet-creation`, `battle`,
+`battle-result`, `breeding`, or `breeding-egg` to validate those layouts instead
+of the Home gallery.
 
 All menus support pointer input and keyboard navigation. Use `Tab` and
 `Shift+Tab` to move focus, then `Enter` or `Space` to activate the focused

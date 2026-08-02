@@ -830,8 +830,9 @@ pub(crate) fn spawn_breeding(
     mut commands: Commands<'_, '_>,
     view: Res<'_, GameViewModel>,
     selection: Res<'_, PetSelection>,
+    asset_server: Res<'_, AssetServer>,
 ) {
-    commands.spawn((ScreenRoot, breeding_page(&view, *selection)));
+    commands.spawn((ScreenRoot, breeding_page(&asset_server, &view, *selection)));
 }
 
 pub(crate) fn spawn_battle(
@@ -1107,28 +1108,345 @@ fn battle_primary_action(view: &GameViewModel) -> (String, NavigateTo) {
     }
 }
 
-fn breeding_page(view: &GameViewModel, selection: PetSelection) -> impl Bundle + use<> {
+fn breeding_page(
+    asset_server: &AssetServer,
+    view: &GameViewModel,
+    selection: PetSelection,
+) -> impl Bundle + use<> {
     let (primary_label, primary_action, _) = breeding_primary_action(view, selection);
     (
-        screen_node(),
+        breeding_screen_node(),
         BackgroundColor(Color::srgb(0.055, 0.07, 0.10)),
         children![
-            heading("Breeding & eggs"),
-            (
-                Text::new(breeding_text(view, selection)),
-                content_node(),
-                TextLayout::justify(Justify::Center),
-                TextFont::from_font_size(19.0),
-                TextColor(Color::srgb(0.78, 0.82, 0.88)),
-            ),
+            heading("Breeding nursery"),
+            breeding_parent_pair(asset_server, view, selection),
+            egg_incubation_panel(view),
             status_banner(view),
-            menu_button("Next parent A", NavigateTo::CyclePrimary),
-            menu_button("Next parent B", NavigateTo::CycleSecondary),
+            breeding_action_row(&primary_label, primary_action),
+        ],
+    )
+}
+
+fn breeding_screen_node() -> Node {
+    Node {
+        width: percent(100),
+        height: percent(100),
+        flex_direction: FlexDirection::Column,
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        row_gap: px(9),
+        padding: UiRect::all(px(12)),
+        overflow: Overflow::clip(),
+        ..default()
+    }
+}
+
+fn breeding_parent_pair(
+    asset_server: &AssetServer,
+    view: &GameViewModel,
+    selection: PetSelection,
+) -> impl Bundle + use<> {
+    let parents = selected_breeding_parents(view, selection);
+    (
+        Node {
+            width: percent(100),
+            max_width: px(680),
+            min_height: px(184),
+            flex_direction: FlexDirection::Row,
+            align_items: AlignItems::Stretch,
+            justify_content: JustifyContent::Center,
+            column_gap: px(10),
+            padding: UiRect::all(px(10)),
+            border_radius: BorderRadius::all(px(18)),
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.065, 0.09, 0.125)),
+        children![
+            breeding_parent_card(
+                asset_server,
+                "Parent A",
+                parents[0],
+                NavigateTo::CyclePrimary,
+                Color::srgb(0.30, 0.68, 0.92),
+            ),
+            breeding_parent_card(
+                asset_server,
+                "Parent B",
+                parents[1],
+                NavigateTo::CycleSecondary,
+                Color::srgb(0.82, 0.48, 0.82),
+            ),
+        ],
+    )
+}
+
+fn selected_breeding_parents(
+    view: &GameViewModel,
+    selection: PetSelection,
+) -> [Option<&application::dto::PetDto>; 2] {
+    let Some(summary) = &view.summary else {
+        return [None, None];
+    };
+    let primary = selection
+        .primary(summary.pets.len())
+        .and_then(|index| summary.pets.get(index));
+    let secondary = selection
+        .pair(summary.pets.len())
+        .and_then(|indices| summary.pets.get(indices[1]));
+    [primary, secondary]
+}
+
+fn breeding_parent_card(
+    asset_server: &AssetServer,
+    role: &str,
+    pet: Option<&application::dto::PetDto>,
+    action: NavigateTo,
+    accent: Color,
+) -> impl Bundle + use<> {
+    let species = pet.map_or("emberling", |pet| pet.species.as_str());
+    let name = pet.map_or("Choose a pet".to_owned(), |pet| pet.name.clone());
+    let identity = pet.map_or_else(
+        || "No parent selected".to_owned(),
+        |pet| {
+            format!(
+                "{} | Lv {}\nAge {}d",
+                display_name(&pet.species),
+                pet.level,
+                pet.age_ticks / 1_440
+            )
+        },
+    );
+    let readiness = pet.map_or("Adopt another pet", breeding_parent_readiness);
+    let mut accessibility = AccessibilityTreeNode::new(Role::Image);
+    accessibility.set_label(format!("{role}: {name}, {identity}, {readiness}"));
+    (
+        Node {
+            width: percent(50),
+            min_height: px(164),
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            row_gap: px(3),
+            padding: UiRect::all(px(8)),
+            border: UiRect::all(px(2)),
+            border_radius: BorderRadius::all(px(14)),
+            ..default()
+        },
+        BorderColor::all(accent),
+        BackgroundColor(Color::srgb(0.085, 0.115, 0.155)),
+        children![
             (
-                menu_button(&primary_label, primary_action),
+                Text::new(role.to_owned()),
+                TextFont::from_font_size(13.0),
+                TextColor(accent),
+            ),
+            (
+                ImageNode::new(asset_server.load(sprite_path(species))),
+                AccessibilityNode(accessibility),
+                Node {
+                    width: px(64),
+                    height: px(64),
+                    ..default()
+                },
+                if pet.is_some() {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                },
+            ),
+            (
+                Text::new(name),
+                TextFont::from_font_size(18.0),
+                TextColor(Color::srgb(0.97, 0.81, 0.45)),
+            ),
+            (
+                Text::new(identity),
+                TextLayout::justify(Justify::Center),
+                TextFont::from_font_size(12.0),
+                TextColor(Color::srgb(0.72, 0.78, 0.84)),
+            ),
+            (
+                Text::new(readiness),
+                TextFont::from_font_size(12.0),
+                TextColor(if pet.is_some_and(breeding_parent_is_age_eligible) {
+                    Color::srgb(0.42, 0.86, 0.60)
+                } else {
+                    Color::srgb(0.94, 0.64, 0.34)
+                }),
+            ),
+            breeding_cycle_button(role, action),
+        ],
+    )
+}
+
+fn breeding_parent_is_age_eligible(pet: &application::dto::PetDto) -> bool {
+    pet.alive && pet.life_stage == "adult" && pet.age_ticks >= 7 * 1_440
+}
+
+fn breeding_parent_readiness(pet: &application::dto::PetDto) -> &'static str {
+    if !pet.alive {
+        "Unavailable"
+    } else if breeding_parent_is_age_eligible(pet) {
+        "Age eligible"
+    } else {
+        "Needs 7 days"
+    }
+}
+
+fn breeding_cycle_button(role: &str, action: NavigateTo) -> impl Bundle + use<> {
+    let label = format!("Change {role}");
+    let mut accessibility = AccessibilityTreeNode::new(Role::Button);
+    accessibility.set_label(label.clone());
+    (
+        bevy::ui_widgets::Button,
+        action,
+        TabIndex(0),
+        Hovered::default(),
+        AccessibilityNode(accessibility),
+        Node {
+            width: percent(100),
+            max_width: px(150),
+            min_height: px(30),
+            margin: UiRect::top(px(3)),
+            border: UiRect::all(px(2)),
+            padding: UiRect::axes(px(6), px(3)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            border_radius: BorderRadius::all(px(8)),
+            ..default()
+        },
+        BorderColor::all(Color::NONE),
+        BackgroundColor(Color::srgb(0.15, 0.23, 0.30)),
+        children![(
+            Text::new(label),
+            TextFont::from_font_size(13.0),
+            TextColor(Color::WHITE),
+        )],
+    )
+}
+
+fn egg_incubation_panel(view: &GameViewModel) -> impl Bundle + use<> {
+    let egg = view
+        .summary
+        .as_ref()
+        .and_then(|summary| summary.eggs.first());
+    let (title, detail, progress, ready) = egg.map_or_else(
+        || {
+            (
+                "Nursery is ready".to_owned(),
+                "Choose two healthy adult pets to create an egg.".to_owned(),
+                0,
+                false,
+            )
+        },
+        |egg| {
+            let elapsed = egg.incubation_ticks.saturating_sub(egg.remaining_ticks);
+            let progress = elapsed
+                .saturating_mul(100)
+                .checked_div(egg.incubation_ticks)
+                .map_or(100, |value| value.min(100) as i32);
+            let state = if egg.ready {
+                "Ready to hatch".to_owned()
+            } else {
+                format!("{} remaining", compact_game_duration(egg.remaining_ticks))
+            };
+            (
+                format!("{} egg", display_name(&egg.species)),
+                format!("{state} | {progress}% incubated"),
+                progress,
+                egg.ready,
+            )
+        },
+    );
+    (
+        Node {
+            width: percent(100),
+            max_width: px(680),
+            min_height: px(82),
+            flex_direction: FlexDirection::Column,
+            row_gap: px(5),
+            padding: UiRect::axes(px(14), px(9)),
+            border: UiRect::all(px(2)),
+            border_radius: BorderRadius::all(px(13)),
+            ..default()
+        },
+        BorderColor::all(if ready {
+            Color::srgb(0.40, 0.84, 0.56)
+        } else {
+            Color::srgb(0.58, 0.44, 0.24)
+        }),
+        BackgroundColor(Color::srgb(0.12, 0.105, 0.075)),
+        children![
+            (
+                Text::new(title),
+                TextFont::from_font_size(18.0),
+                TextColor(Color::srgb(1.0, 0.82, 0.46)),
+            ),
+            (
+                Text::new(detail),
+                TextFont::from_font_size(13.0),
+                TextColor(Color::srgb(0.78, 0.80, 0.82)),
+            ),
+            (
+                Node {
+                    display: if egg.is_some() {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    },
+                    width: percent(100),
+                    height: px(9),
+                    border_radius: BorderRadius::all(px(5)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.18, 0.18, 0.16)),
+                children![(
+                    Node {
+                        width: percent(progress as f32),
+                        height: percent(100),
+                        border_radius: BorderRadius::all(px(5)),
+                        ..default()
+                    },
+                    BackgroundColor(if ready {
+                        Color::srgb(0.36, 0.82, 0.54)
+                    } else {
+                        Color::srgb(0.94, 0.65, 0.28)
+                    }),
+                )],
+            ),
+        ],
+    )
+}
+
+fn compact_game_duration(ticks: u64) -> String {
+    let days = ticks / 1_440;
+    let hours = (ticks % 1_440) / 60;
+    let minutes = ticks % 60;
+    if days > 0 {
+        format!("{days}d {hours}h")
+    } else if hours > 0 {
+        format!("{hours}h {minutes}m")
+    } else {
+        format!("{minutes}m")
+    }
+}
+
+fn breeding_action_row(primary_label: &str, primary_action: NavigateTo) -> impl Bundle + use<> {
+    (
+        Node {
+            width: percent(100),
+            max_width: px(580),
+            flex_direction: FlexDirection::Row,
+            column_gap: px(10),
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        children![
+            (
+                compact_menu_button(primary_label, primary_action),
                 BreedingActionButton,
             ),
-            menu_button("Home", NavigateTo::Continue),
+            compact_menu_button("Home", NavigateTo::Continue),
         ],
     )
 }
@@ -1147,11 +1465,7 @@ fn breeding_primary_action(
         if egg.ready {
             return ("Hatch egg".into(), NavigateTo::HatchFirstEgg, false);
         }
-        return (
-            format!("Incubating ({} min)", egg.remaining_ticks),
-            NavigateTo::Noop,
-            true,
-        );
+        return ("Egg is incubating".into(), NavigateTo::Noop, true);
     }
     let Some([first, second]) = selection.pair(summary.pets.len()) else {
         return ("Choose two parents".into(), NavigateTo::Noop, true);
@@ -1711,6 +2025,7 @@ pub(crate) fn refresh_battle_screen(
 
 pub(crate) fn refresh_breeding_screen(
     mut commands: Commands<'_, '_>,
+    asset_server: Res<'_, AssetServer>,
     state: Res<'_, State<AppState>>,
     view: Res<'_, GameViewModel>,
     selection: Res<'_, PetSelection>,
@@ -1722,7 +2037,7 @@ pub(crate) fn refresh_breeding_screen(
     for entity in &roots {
         commands.entity(entity).despawn();
     }
-    commands.spawn((ScreenRoot, breeding_page(&view, *selection)));
+    commands.spawn((ScreenRoot, breeding_page(&asset_server, &view, *selection)));
 }
 
 pub(crate) fn refresh_pet_status_text(
@@ -2289,57 +2604,6 @@ fn save_slots_text(view: &GameViewModel, active: domain::identifiers::SaveSlotId
         .join("\n")
 }
 
-fn breeding_text(view: &GameViewModel, selection: PetSelection) -> String {
-    let Some(summary) = &view.summary else {
-        return "No world loaded".to_owned();
-    };
-    let mut lines = selection.pair(summary.pets.len()).map_or_else(
-        || {
-            summary
-                .pets
-                .first()
-                .into_iter()
-                .map(|pet| {
-                    format!(
-                        "Parent A: {} ({}) | {} | age {} days",
-                        pet.name,
-                        display_name(&pet.species),
-                        pet.life_stage,
-                        pet.age_ticks / 1_440
-                    )
-                })
-                .collect::<Vec<_>>()
-        },
-        |[first, second]| {
-            [(&summary.pets[first], 'A'), (&summary.pets[second], 'B')]
-                .into_iter()
-                .map(|(pet, label)| {
-                    format!(
-                        "Parent {label}: {} ({}) | {} | age {} days",
-                        pet.name,
-                        display_name(&pet.species),
-                        pet.life_stage,
-                        pet.age_ticks / 1_440
-                    )
-                })
-                .collect::<Vec<_>>()
-        },
-    );
-    if summary.pets.len() < 2 {
-        lines.push("Two founder pets are required.".into());
-    } else if let Some(egg) = summary.eggs.first() {
-        let readiness = if egg.ready {
-            "ready to hatch".to_owned()
-        } else {
-            format!("{} minutes remaining", egg.remaining_ticks)
-        };
-        lines.push(format!("Egg: {} | {readiness}", display_name(&egg.species)));
-    } else {
-        lines.push("Both parents must be healthy adults at least 7 days old.".into());
-    }
-    lines.join("\n")
-}
-
 fn battle_actions(
     view: &GameViewModel,
     tactic: BattleTactic,
@@ -2659,7 +2923,10 @@ mod tests {
                 false
             )
         );
-        assert!(breeding_text(&view, PetSelection::default()).contains("at least 7 days old"));
+        assert_eq!(
+            breeding_parent_readiness(&view.summary.as_ref().unwrap().pets[0]),
+            "Age eligible"
+        );
     }
 
     #[test]
@@ -2679,9 +2946,9 @@ mod tests {
         };
 
         assert!(pet_status_text(&view, selection).starts_with("Sparky the Aquafin"));
-        let breeding = breeding_text(&view, selection);
-        assert!(breeding.contains("Parent A: Sparky (Aquafin)"));
-        assert!(breeding.contains("Parent B: Sparky (Mossback)"));
+        let parents = selected_breeding_parents(&view, selection);
+        assert_eq!(parents[0].unwrap().species, "aquafin");
+        assert_eq!(parents[1].unwrap().species, "mossback");
     }
 
     #[test]

@@ -485,12 +485,15 @@ fn headless_ui_flow_breeds_incubates_hatches_and_reloads() {
             .len(),
         1
     );
+    assert_text_contains(&mut app, "2d 0h remaining | 0% incubated");
+    assert_button_disabled(&mut app, "Egg is incubating");
 
     app.world_mut()
         .write_message(AppCommand(Command::AdvanceTo {
             wall_now: UnixSeconds(9 * 86_400),
         }));
     pump(&mut app, 3);
+    assert_text_contains(&mut app, "Ready to hatch | 100% incubated");
     activate(&mut app, "Hatch egg");
     let summary = app
         .world()

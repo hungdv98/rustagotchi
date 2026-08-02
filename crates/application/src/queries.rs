@@ -71,6 +71,7 @@ impl Query for GameSummaryQuery {
                 species: egg.species.to_string(),
                 parent_ids: [egg.parents[0].to_string(), egg.parents[1].to_string()],
                 remaining_ticks: egg.incubation.remaining(state.simulation.tick).as_ticks(),
+                incubation_ticks: egg.incubation.required.as_ticks(),
                 ready: egg.is_ready(state.simulation.tick),
             })
             .collect();

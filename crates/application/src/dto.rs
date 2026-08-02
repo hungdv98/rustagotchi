@@ -32,6 +32,7 @@ pub struct EggDto {
     pub species: String,
     pub parent_ids: [String; 2],
     pub remaining_ticks: u64,
+    pub incubation_ticks: u64,
     pub ready: bool,
 }
 

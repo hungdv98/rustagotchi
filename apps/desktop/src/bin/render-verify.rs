@@ -9,11 +9,12 @@ use bevy::render::RenderPlugin;
 use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured};
 use bevy::window::{PresentMode, WindowPlugin, WindowResolution};
 use content::ContentLoader;
+use domain::breeding::{Egg, IncubationState};
 use domain::genetics::{Ancestry, GeneticProfile, Parentage};
-use domain::identifiers::{ItemId, PetId, SaveSlotId, SpeciesId};
-use domain::pet::{Experience, NeedKind, NeedValue, Personality, Pet, PetName};
+use domain::identifiers::{EggId, ItemId, PetId, SaveSlotId, SpeciesId};
+use domain::pet::{Experience, LifeStage, NeedKind, NeedValue, Personality, Pet, PetName};
 use domain::rng::WorldSeed;
-use domain::time::{Tick, UnixSeconds};
+use domain::time::{GameDuration, Tick, UnixSeconds};
 use presentation::{
     ActiveSaveSlot, AppState, BattleResultView, EngineResource, GameViewModel,
     RustagotchiPresentationPlugin,
@@ -47,6 +48,38 @@ fn main() -> Result<()> {
     } else {
         PET_COUNT as u64 + 1
     };
+    if matches!(
+        screen,
+        VerificationScreen::Breeding | VerificationScreen::BreedingEgg
+    ) {
+        let adult_age = GameDuration::from_days(7);
+        state.simulation.tick = Tick::ZERO.saturating_add(adult_age);
+        state.clock.advance(adult_age);
+        for pet in state.simulation.pets.values_mut() {
+            pet.stage = LifeStage::Adult;
+        }
+    }
+    if matches!(screen, VerificationScreen::BreedingEgg) {
+        let egg_id = EggId::derive(seed, state.simulation.tick, state.next_entity_ordinal);
+        state.eggs.insert(
+            egg_id,
+            Egg {
+                id: egg_id,
+                parents: [
+                    PetId::derive(seed, Tick::ZERO, 1),
+                    PetId::derive(seed, Tick::ZERO, 2),
+                ],
+                species: SpeciesId::new("aquafin").expect("built-in species id is valid"),
+                genetics: GeneticProfile::new(),
+                ancestry: Ancestry::founder(),
+                incubation: IncubationState {
+                    laid_at: state.simulation.tick,
+                    required: GameDuration::from_days(2),
+                },
+                mutations: Vec::new(),
+            },
+        );
+    }
     if matches!(screen, VerificationScreen::PetStatus) {
         for pet in state.simulation.pets.values_mut() {
             pet.set_need(
@@ -192,6 +225,8 @@ enum VerificationScreen {
     PetCreation,
     Battle,
     BattleResult,
+    Breeding,
+    BreedingEgg,
 }
 
 impl VerificationScreen {
@@ -205,8 +240,10 @@ impl VerificationScreen {
             "pet-creation" => Ok(Self::PetCreation),
             "battle" => Ok(Self::Battle),
             "battle-result" => Ok(Self::BattleResult),
+            "breeding" => Ok(Self::Breeding),
+            "breeding-egg" => Ok(Self::BreedingEgg),
             value => anyhow::bail!(
-                "unsupported RUSTAGOTCHI_RENDER_SCREEN `{value}`; use `home`, `pet-status`, `pet-creation`, `battle` or `battle-result`"
+                "unsupported RUSTAGOTCHI_RENDER_SCREEN `{value}`; use `home`, `pet-status`, `pet-creation`, `battle`, `battle-result`, `breeding` or `breeding-egg`"
             ),
         }
     }
@@ -218,6 +255,7 @@ impl VerificationScreen {
             Self::PetCreation => AppState::PetCreation,
             Self::Battle => AppState::Battle,
             Self::BattleResult => AppState::Battle,
+            Self::Breeding | Self::BreedingEgg => AppState::Breeding,
         }
     }
 
@@ -228,6 +266,8 @@ impl VerificationScreen {
             Self::PetCreation => "pet-creation",
             Self::Battle => "battle",
             Self::BattleResult => "battle-result",
+            Self::Breeding => "breeding",
+            Self::BreedingEgg => "breeding-egg",
         }
     }
 }
@@ -355,7 +395,10 @@ fn validate_screenshot(
                 "captured pet status is missing healthy need-meter feedback"
             );
         }
-        VerificationScreen::Battle | VerificationScreen::BattleResult => {}
+        VerificationScreen::Battle
+        | VerificationScreen::BattleResult
+        | VerificationScreen::Breeding
+        | VerificationScreen::BreedingEgg => {}
         VerificationScreen::PetCreation => {}
     }
     exit.write(AppExit::Success);
