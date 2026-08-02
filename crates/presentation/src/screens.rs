@@ -231,7 +231,7 @@ pub(crate) fn spawn_save_slots(
 }
 
 pub(crate) fn spawn_pet_creation(mut commands: Commands<'_, '_>, view: Res<'_, GameViewModel>) {
-    let (adopted, maximum) = adoption_capacity(&view);
+    let (adopted, maximum, balance) = adoption_summary(&view);
     commands.spawn((
         ScreenRoot,
         screen_node(),
@@ -240,7 +240,7 @@ pub(crate) fn spawn_pet_creation(mut commands: Commands<'_, '_>, view: Res<'_, G
             heading("Adopt a pet"),
             (
                 Text::new(format!(
-                    "Choose a species and name  |  Adopted {adopted}/{maximum}"
+                    "Adopted {adopted}/{maximum}  |  Wallet {balance} coins"
                 )),
                 content_node(),
                 TextLayout::justify(Justify::Center),
@@ -263,11 +263,15 @@ pub(crate) fn spawn_pet_creation(mut commands: Commands<'_, '_>, view: Res<'_, G
     ));
 }
 
-fn adoption_capacity(view: &GameViewModel) -> (usize, usize) {
+fn adoption_summary(view: &GameViewModel) -> (usize, usize, i64) {
     view.summary
         .as_ref()
-        .map_or((0, application::MAX_ADOPTED_PETS), |summary| {
-            (summary.adopted_pets, summary.max_adopted_pets)
+        .map_or((0, application::MAX_ADOPTED_PETS, 0), |summary| {
+            (
+                summary.adopted_pets,
+                summary.max_adopted_pets,
+                summary.balance,
+            )
         })
 }
 
@@ -294,17 +298,16 @@ fn adoption_upgrade_button(view: &GameViewModel) -> impl Bundle + use<> {
         || ("Slots unavailable".to_owned(), NavigateTo::Noop),
         |summary| match summary.next_adoption_slot_cost {
             Some(cost) => {
-                let affordability = if summary.balance >= cost {
-                    "ready"
+                let verb = if summary.balance >= cost {
+                    "Unlock"
                 } else {
-                    "save up"
+                    "Save for"
                 };
                 (
                     format!(
-                        "Unlock slot {} of {} - {cost} coins ({affordability}; {} owned)",
+                        "{verb} {}/{} - {cost} coins",
                         summary.max_adopted_pets + 1,
                         summary.maximum_adopted_pets,
-                        summary.balance
                     ),
                     NavigateTo::UnlockAdoptionSlot,
                 )
@@ -318,7 +321,34 @@ fn adoption_upgrade_button(view: &GameViewModel) -> impl Bundle + use<> {
             ),
         },
     );
-    menu_button(&label, action)
+    let mut accessibility = AccessibilityTreeNode::new(Role::Button);
+    accessibility.set_label(label.clone());
+    (
+        bevy::ui_widgets::Button,
+        action,
+        TabIndex(0),
+        Hovered::default(),
+        AccessibilityNode(accessibility),
+        Node {
+            width: percent(100),
+            max_width: px(360),
+            min_height: px(54),
+            border: UiRect::all(px(3)),
+            padding: UiRect::axes(px(10), px(8)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            border_radius: BorderRadius::all(px(12)),
+            ..default()
+        },
+        BorderColor::all(Color::NONE),
+        BackgroundColor(Color::srgb(0.16, 0.25, 0.32)),
+        children![(
+            Text::new(label),
+            TextLayout::no_wrap(),
+            TextFont::from_font_size(18.0),
+            TextColor(Color::WHITE),
+        )],
+    )
 }
 
 fn pet_name_input() -> impl Bundle + use<> {

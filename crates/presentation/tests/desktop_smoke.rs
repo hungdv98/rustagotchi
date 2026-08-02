@@ -427,11 +427,8 @@ fn coins_unlock_and_persist_an_adoption_slot_through_the_real_ui() {
 
     activate(&mut app, "Continue");
     activate(&mut app, "Adopt");
-    assert_text_contains(&mut app, "Adopted 1/2");
-    activate(
-        &mut app,
-        "Unlock slot 3 of 8 - 100 coins (ready; 150 owned)",
-    );
+    assert_text_contains(&mut app, "Adopted 1/2  |  Wallet 150 coins");
+    activate(&mut app, "Unlock 3/8 - 100 coins");
     let summary = app
         .world()
         .resource::<GameViewModel>()
