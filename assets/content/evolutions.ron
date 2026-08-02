@@ -1,0 +1,6 @@
+(
+  definitions: [
+    (from: "emberling", to: "stormling", minimum_level: 20),
+    (from: "stormling", to: "aquafin", minimum_level: 40),
+  ],
+)

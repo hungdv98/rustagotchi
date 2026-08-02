@@ -1,0 +1,24 @@
+* text=auto eol=lf
+
+# Shell scripts run on Linux CI runners; a CRLF shebang breaks them.
+*.sh text eol=lf
+
+# PowerShell is the Windows-side entry point and stays CRLF.
+*.ps1 text eol=crlf
+
+# Dependency snapshots are compared byte-for-byte by both check-deps
+# implementations, so their endings must not vary by platform.
+scripts/dep-allowlist/*.txt text eol=lf
+
+# Binary assets and committed save fixtures must never be line-ending munged.
+*.png binary
+*.jpg binary
+*.ogg binary
+*.wav binary
+*.ttf binary
+*.otf binary
+*.db binary
+*.rgsave binary
+tests/fixtures/saves/** binary
+
+Cargo.lock -diff linguist-generated

@@ -1,0 +1,10 @@
+(
+  definitions: [
+    (id: "chills", name_key: "illness.chills", severity_per_tick: "0.05", medicine: "cooling_tonic"),
+    (id: "cough", name_key: "illness.cough", severity_per_tick: "0.08", medicine: "cough_syrup"),
+    (id: "exhaustion", name_key: "illness.exhaustion", severity_per_tick: "0.04", medicine: "energy_salts"),
+    (id: "irritated_eyes", name_key: "illness.irritated_eyes", severity_per_tick: "0.03", medicine: "eye_drops"),
+    (id: "sprain", name_key: "illness.sprain", severity_per_tick: "0.06", medicine: "herbal_wrap"),
+    (id: "static_fever", name_key: "illness.static_fever", severity_per_tick: "0.1", medicine: "spark_balm"),
+  ],
+)

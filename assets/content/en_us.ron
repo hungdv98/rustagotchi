@@ -1,0 +1,17 @@
+{
+  "species.emberling": "Emberling", "species.stormling": "Stormling", "species.aquafin": "Aquafin",
+  "move.tackle": "Tackle", "move.warm_nuzzle": "Warm Nuzzle", "move.spark_bite": "Spark Bite",
+  "move.cinder_dash": "Cinder Dash", "move.flame_arc": "Flame Arc", "move.solar_roar": "Solar Roar",
+  "move.static_puff": "Static Puff", "move.gust": "Gust", "move.bolt_dash": "Bolt Dash",
+  "move.thunder_clap": "Thunder Clap", "move.sky_break": "Sky Break", "move.bubble_pop": "Bubble Pop",
+  "move.fin_slash": "Fin Slash", "move.tidal_spin": "Tidal Spin", "move.riptide": "Riptide", "move.deep_song": "Deep Song",
+  "item.apple_slice": "Apple Slice", "item.berry_mix": "Berry Mix", "item.carrot_crunch": "Carrot Crunch",
+  "item.honey_toast": "Honey Toast", "item.mushroom_stew": "Mushroom Stew", "item.rice_ball": "Rice Ball",
+  "item.seaweed_wrap": "Seaweed Wrap", "item.spice_noodles": "Spice Noodles", "item.sunfruit": "Sunfruit",
+  "item.trail_biscuit": "Trail Biscuit", "item.watermelon_cup": "Watermelon Cup", "item.yogurt_drop": "Yogurt Drop",
+  "item.cooling_tonic": "Cooling Tonic", "item.cough_syrup": "Cough Syrup", "item.energy_salts": "Energy Salts",
+  "item.eye_drops": "Eye Drops", "item.herbal_wrap": "Herbal Wrap", "item.rest_draught": "Rest Draught",
+  "item.spark_balm": "Spark Balm", "item.universal_remedy": "Universal Remedy",
+  "illness.chills": "Chills", "illness.cough": "Cough", "illness.exhaustion": "Exhaustion",
+  "illness.irritated_eyes": "Irritated Eyes", "illness.sprain": "Sprain", "illness.static_fever": "Static Fever",
+}

@@ -1,0 +1,20 @@
+(
+  definitions: [
+    (id: "tackle", name_key: "move.tackle", element: neutral, power: 30, accuracy_percent: "95", energy_cost: 8),
+    (id: "warm_nuzzle", name_key: "move.warm_nuzzle", element: ember, power: 20, accuracy_percent: "100", energy_cost: 5),
+    (id: "spark_bite", name_key: "move.spark_bite", element: ember, power: 45, accuracy_percent: "90", energy_cost: 12, status: Some((kind: burning, chance_percent: "30", duration_turns: 2, potency: 6))),
+    (id: "cinder_dash", name_key: "move.cinder_dash", element: ember, power: 60, accuracy_percent: "85", energy_cost: 18),
+    (id: "flame_arc", name_key: "move.flame_arc", element: ember, power: 80, accuracy_percent: "80", energy_cost: 24),
+    (id: "solar_roar", name_key: "move.solar_roar", element: ember, power: 100, accuracy_percent: "75", energy_cost: 32),
+    (id: "static_puff", name_key: "move.static_puff", element: storm, power: 22, accuracy_percent: "100", energy_cost: 6, status: Some((kind: stunned, chance_percent: "15", duration_turns: 1, potency: 0))),
+    (id: "gust", name_key: "move.gust", element: storm, power: 40, accuracy_percent: "95", energy_cost: 10),
+    (id: "bolt_dash", name_key: "move.bolt_dash", element: storm, power: 62, accuracy_percent: "85", energy_cost: 18),
+    (id: "thunder_clap", name_key: "move.thunder_clap", element: storm, power: 82, accuracy_percent: "80", energy_cost: 25),
+    (id: "sky_break", name_key: "move.sky_break", element: storm, power: 105, accuracy_percent: "72", energy_cost: 34),
+    (id: "bubble_pop", name_key: "move.bubble_pop", element: aqua, power: 24, accuracy_percent: "100", energy_cost: 6, status: Some((kind: poisoned, chance_percent: "25", duration_turns: 3, potency: 4))),
+    (id: "fin_slash", name_key: "move.fin_slash", element: aqua, power: 42, accuracy_percent: "94", energy_cost: 11),
+    (id: "tidal_spin", name_key: "move.tidal_spin", element: aqua, power: 64, accuracy_percent: "86", energy_cost: 19),
+    (id: "riptide", name_key: "move.riptide", element: aqua, power: 84, accuracy_percent: "81", energy_cost: 25),
+    (id: "deep_song", name_key: "move.deep_song", element: aqua, power: 98, accuracy_percent: "78", energy_cost: 30),
+  ],
+)

@@ -1,0 +1,34 @@
+[package]
+name = "rustagotchi-desktop"
+description = "The Rustagotchi desktop client."
+default-run = "rustagotchi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "rustagotchi"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+# Bevy arrives in Phase 6 together with crates/presentation. Until then this
+# binary stays outside `default-members` and pulls in nothing heavy.
+[dependencies]
+rustagotchi-application.workspace = true
+rustagotchi-content.workspace = true
+rustagotchi-domain.workspace = true
+rustagotchi-persistence.workspace = true
+rustagotchi-platform.workspace = true
+rustagotchi-presentation.workspace = true
+rustagotchi-simulation.workspace = true
+rustagotchi-telemetry.workspace = true
+anyhow.workspace = true
+bevy.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

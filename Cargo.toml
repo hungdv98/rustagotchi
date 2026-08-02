@@ -1,0 +1,181 @@
+[workspace]
+resolver = "3"
+members = [
+    "apps/desktop",
+    "apps/simulation-cli",
+    "apps/content-editor",
+
+    "crates/domain",
+    "crates/application",
+    "crates/simulation",
+    "crates/content",
+    "crates/persistence",
+    "crates/platform",
+    "crates/presentation",
+    "crates/minigames",
+    "crates/telemetry",
+    "crates/test-support",
+
+    "tests",
+]
+
+# The default set is the headless core (Phases 1-5). `apps/desktop`,
+# `crates/presentation` and `apps/content-editor` are excluded so that day-to-day
+# `cargo check` / `cargo test` never builds the graphics stack.
+#
+# When Bevy lands in Phase 6, move `apps/content-editor` from `members` to
+# `exclude` so that even `--workspace` stays fast for core work. See
+# docs/implementation-plan.md correction C5.
+default-members = [
+    "apps/simulation-cli",
+    "crates/domain",
+    "crates/application",
+    "crates/simulation",
+    "crates/content",
+    "crates/persistence",
+    "crates/platform",
+    "crates/minigames",
+    "crates/telemetry",
+    "crates/test-support",
+
+    "tests",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+# Pinned to the exact toolchain in rust-toolchain.toml. This is an application,
+# not a published library: there are no MSRV consumers, so there is one number
+# to keep in sync instead of two. See docs/implementation-plan.md correction C3.
+rust-version = "1.97.1"
+authors = ["Rustagotchi Team"]
+repository = "https://github.com/rustagotchi/rustagotchi"
+
+[workspace.dependencies]
+# ---------------------------------------------------------------------------
+# Internal crates
+# ---------------------------------------------------------------------------
+rustagotchi-domain = { path = "crates/domain" }
+rustagotchi-application = { path = "crates/application" }
+rustagotchi-simulation = { path = "crates/simulation" }
+rustagotchi-content = { path = "crates/content" }
+rustagotchi-persistence = { path = "crates/persistence" }
+rustagotchi-platform = { path = "crates/platform" }
+rustagotchi-presentation = { path = "crates/presentation" }
+rustagotchi-minigames = { path = "crates/minigames" }
+rustagotchi-telemetry = { path = "crates/telemetry" }
+rustagotchi-test-support = { path = "crates/test-support" }
+
+# ---------------------------------------------------------------------------
+# External crates. Versions verified against crates.io on 2026-08-02.
+# ---------------------------------------------------------------------------
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.145"
+rmp-serde = "1.3.1"
+ron = "0.12.2"
+zstd = "0.13.3"
+sha2 = "0.11.0"
+
+thiserror = "2.0.19"
+anyhow = "1.0.104"
+
+# NOTE: rand 0.10 / rand_chacha 0.10, not the 0.9 pinned in docs/init-plan.md.
+# See docs/implementation-plan.md correction C1.
+rand = { version = "0.10.2", default-features = false }
+rand_chacha = { version = "0.10.0", default-features = false }
+
+# NOTE: no `v4` feature. Identifiers must be derived deterministically from
+# (world seed, tick, counter) -- see ADR 0007 -- so OS-random UUID generation is
+# not wanted anywhere in the core. Add `v4` locally in a tool if one ever needs it.
+uuid = { version = "1.24.0", default-features = false, features = ["serde"] }
+smallvec = { version = "1.15.1", features = ["serde", "union"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+
+tracing = "0.1.44"
+accesskit = "0.24.1"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+fs4 = { version = "1.1.0", features = ["sync"] }
+getrandom = "0.4.3"
+directories = "6.0.0"
+notify-rust = "4.18.0"
+
+clap = { version = "4.6.5", features = ["derive"] }
+
+# Bevy is active in Phase 6. `bevy_egui` and `fluent` remain reserved for later
+# presentation work and must be re-verified when first used.
+# Cargo.lock deliberately holds the compatible wgpu 29.0.3 patch family. The
+# 29.0.4 Windows resolver mixed windows-rs 0.61/0.62 types in wgpu-hal.
+bevy = { version = "=0.19.0", default-features = false, features = [
+    "std",
+    "async_executor",
+    "multi_threaded",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_color",
+    "bevy_core_pipeline",
+    "bevy_input_focus",
+    "bevy_picking",
+    "bevy_render",
+    "bevy_state",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_ui_widgets",
+    "bevy_ui_render",
+    "bevy_window",
+    "bevy_winit",
+    "default_font",
+    "png",
+    "ui_picking",
+    "x11",
+] }
+bevy_egui = "0.41.1"
+fluent = "0.17.0"
+
+# Dev-dependencies
+proptest = "1.11.0"
+insta = "1.48.0"
+criterion = "0.8.2"
+tempfile = "3.27.0"
+
+# ---------------------------------------------------------------------------
+# Lints. Every member opts in with `[lints] workspace = true`.
+#
+# `disallowed_*` are denied workspace-wide but are inert unless a crate-local
+# clippy.toml lists entries for them. That is how the determinism rules in
+# crates/domain/clippy.toml and crates/simulation/clippy.toml are enforced
+# without constraining crates that legitimately need floats and file I/O.
+# ---------------------------------------------------------------------------
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+disallowed_types = "deny"
+disallowed_methods = "deny"
+disallowed_macros = "deny"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+# NOTE: `panic = "abort"` is deliberately absent. It would disable the
+# catch_unwind that crates/telemetry's crash reporter needs, break
+# `#[should_panic]` under `cargo test --release`, and break benches and fuzzing.
+# See docs/implementation-plan.md correction C2.
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false

@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for the low-risk churn; anything that can change behaviour gets
+      # its own PR so the dependency-closure diff is readable.
+      patch-and-minor:
+        update-types: [minor, patch]
+        exclude-patterns:
+          - bevy*
+          - rand*
+          - rusqlite
+          - ron
+    ignore:
+      # Engine and RNG upgrades change rendering and simulation output. They are
+      # done deliberately between phases, never by an automated PR.
+      - dependency-name: bevy
+      - dependency-name: bevy_egui
+      - dependency-name: rand
+      - dependency-name: rand_chacha
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

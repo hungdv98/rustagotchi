@@ -1,0 +1,13 @@
+# Workspace-wide Clippy configuration.
+#
+# IMPORTANT: Clippy uses the *first* clippy.toml it finds walking up from the
+# crate being compiled -- configuration files are NOT merged. Crates that ship
+# their own clippy.toml (crates/domain, crates/simulation) therefore do not see
+# anything in this file, and must repeat whatever they still need.
+
+# Deliberately empty of `disallowed-types` / `disallowed-methods`: the
+# determinism restrictions apply only to the pure core, not to persistence,
+# platform or presentation.
+
+too-many-arguments-threshold = 8
+type-complexity-threshold = 350

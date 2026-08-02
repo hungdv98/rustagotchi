@@ -1,0 +1,25 @@
+[package]
+name = "rustagotchi-test-support"
+description = "Builders, fixtures, fakes and structural assertions shared by every test suite."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "test_support"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-content.workspace = true
+rustagotchi-application.workspace = true
+rustagotchi-simulation.workspace = true
+rand_chacha.workspace = true
+tempfile.workspace = true

@@ -1,0 +1,29 @@
+[package]
+name = "rustagotchi-content"
+description = "Loads, validates and interns data-driven content packs (species, items, moves, quests)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "content"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ron.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+tempfile.workspace = true

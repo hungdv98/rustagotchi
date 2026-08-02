@@ -1,0 +1,29 @@
+/target/
+**/target/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+
+# Local developer state
+.env
+*.profraw
+/coverage/
+/lcov.info
+
+# Save data produced by local runs
+/saves/
+*.db
+*.db-wal
+*.db-shm
+*.rgsave
+
+# insta review leftovers
+*.snap.new
+*.pending-snap
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "simulation": { "tick": 0, "seed": 88, "pets": {}, "clamped_offline_ticks": 0 },
+  "inventory": { "slots": {}, "capacity": 64 },
+  "wallet": { "balance": 0 },
+  "eggs": {},
+  "breeding_cooldowns": {},
+  "clock": { "current": 0, "anchored_at": 2000 },
+  "next_entity_ordinal": 1,
+  "metadata": { "schema_version": 2, "last_saved_at": 2000, "clamped_offline_ticks": 0 }
+}

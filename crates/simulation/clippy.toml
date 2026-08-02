@@ -1,0 +1,17 @@
+# Determinism guard. Same rationale as crates/domain/clippy.toml; Clippy does
+# not merge configuration files, so the workspace-root settings are repeated.
+too-many-arguments-threshold = 8
+type-complexity-threshold = 350
+
+disallowed-types = [
+    { path = "f32", reason = "ADR 0006: the simulation is integer-only so that offline/live equivalence is exact equality." },
+    { path = "f64", reason = "ADR 0006: the simulation is integer-only so that offline/live equivalence is exact equality." },
+    { path = "std::collections::HashMap", reason = "Iteration order is nondeterministic across runs; use BTreeMap." },
+    { path = "std::collections::HashSet", reason = "Iteration order is nondeterministic across runs; use BTreeSet." },
+    { path = "std::time::SystemTime", reason = "The simulation advances by Tick only. Wall-clock time enters through an application port." },
+    { path = "std::time::Instant", reason = "The simulation advances by Tick only. Wall-clock time enters through an application port." },
+]
+
+disallowed-methods = [
+    { path = "rand::rng", reason = "ADR 0007: RNG is derived from (seed, stream, tick, entity) via domain::rng, never from thread-local entropy." },
+]

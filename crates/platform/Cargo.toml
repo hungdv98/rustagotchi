@@ -1,0 +1,33 @@
+[package]
+name = "rustagotchi-platform"
+description = "OS-dependent capabilities: save paths, real clock, file locking, notifications, lifecycle."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "platform"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-application.workspace = true
+directories.workspace = true
+fs4.workspace = true
+getrandom.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))'.dependencies]
+notify-rust.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,7 @@
+(
+  seed: 17,
+  initial_age_days: 7,
+  advance_days: 3,
+  feed_item: "apple_slice",
+  battle_move: "warm_nuzzle",
+)

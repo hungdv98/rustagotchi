@@ -1,0 +1,15 @@
+ppv-lite86
+proc-macro2
+quote
+rand_chacha
+rand_core
+serde
+serde_core
+serde_derive
+smallvec
+syn
+thiserror
+thiserror-impl
+unicode-ident
+uuid
+zerocopy

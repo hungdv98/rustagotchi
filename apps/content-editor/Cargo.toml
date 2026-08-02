@@ -1,0 +1,26 @@
+[package]
+name = "content-editor"
+description = "Internal authoring tool for species, items, moves, quests and evolution trees."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "content-editor"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+# bevy_egui arrives in Phase 7. At that point move this package from `members`
+# to `exclude` in the root Cargo.toml so `--workspace` stays fast for core work
+# (docs/implementation-plan.md correction C5), and re-verify bevy_egui <-> bevy
+# version compatibility.
+[dependencies]
+rustagotchi-content.workspace = true
+rustagotchi-domain.workspace = true
+anyhow.workspace = true

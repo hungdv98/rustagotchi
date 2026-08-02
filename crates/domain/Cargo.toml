@@ -1,0 +1,34 @@
+[package]
+name = "rustagotchi-domain"
+description = "Pure business rules: pets, genetics, breeding, combat, inventory, events."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "domain"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+# The dependency list of this crate is load-bearing architecture, not
+# convenience. It is snapshot-guarded by scripts/check-deps.*; adding an entry
+# here requires regenerating the allowlist, which makes the change reviewable.
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+rand_chacha.workspace = true
+smallvec.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+insta.workspace = true
+# Tests only: a self-describing format makes serde round-trip failures readable.
+# Saves use MessagePack, which lives in crates/persistence.
+serde_json.workspace = true

@@ -1,0 +1,27 @@
+# Determinism guard for the pure core. See ADR 0006 and ADR 0007.
+#
+# Clippy does not merge configuration files -- this file fully replaces the
+# workspace-root clippy.toml for this crate, so root settings are repeated below.
+too-many-arguments-threshold = 8
+type-complexity-threshold = 350
+
+disallowed-types = [
+    { path = "f32", reason = "ADR 0006: simulated quantities are integers (Milli / Fixed). Floats are permitted only in crates/presentation." },
+    { path = "f64", reason = "ADR 0006: simulated quantities are integers (Milli / Fixed). Floats are permitted only in crates/presentation." },
+    { path = "std::collections::HashMap", reason = "Iteration order is nondeterministic across runs; use BTreeMap." },
+    { path = "std::collections::HashSet", reason = "Iteration order is nondeterministic across runs; use BTreeSet." },
+    { path = "std::time::SystemTime", reason = "Domain has no clock. Time enters as domain::time::Tick, passed in by the caller." },
+    { path = "std::time::Instant", reason = "Domain has no clock. Time enters as domain::time::Tick, passed in by the caller." },
+    { path = "std::path::Path", reason = "Domain performs no I/O." },
+    { path = "std::path::PathBuf", reason = "Domain performs no I/O." },
+]
+
+# `disallowed-methods` is deliberately empty here.
+#
+# It previously banned `Iterator::sum` on the theory that it hides unchecked
+# accumulation. That rule earned nothing: `Milli` and `Fixed` do not implement
+# `Sum`, so a game quantity cannot be summed that way in the first place, and
+# the ban only ever fired on provably-bounded sums over primitives. A lint that
+# is always wrong teaches people to reach for `#[allow]`, which is worse than
+# not having it. The types are the guarantee.
+disallowed-methods = []

@@ -1,0 +1,84 @@
+# Cross-crate test suites.
+#
+# docs/init-plan.md places these at the workspace root as a bare `tests/`
+# directory. That does not work: integration tests belong to a package, and the
+# workspace root is a virtual manifest with no package to own them. Making
+# `tests/` a package of its own keeps the intended directory layout while giving
+# Cargo something to hang the targets on.
+#
+# `autotests = false` plus explicit `[[test]]` entries is what allows the
+# subdirectory grouping (simulation/, integration/, content/, persistence/) that
+# the plan describes; Cargo does not discover test files in subdirectories.
+
+[package]
+name = "rustagotchi-tests"
+description = "Cross-crate integration, simulation, content and persistence suites."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+autotests = false
+autobenches = false
+autoexamples = false
+
+[lib]
+name = "rustagotchi_tests"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-content.workspace = true
+rustagotchi-simulation.workspace = true
+rustagotchi-application.workspace = true
+rustagotchi-persistence.workspace = true
+
+[dev-dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-test-support.workspace = true
+proptest.workspace = true
+tempfile.workspace = true
+rusqlite.workspace = true
+fs4.workspace = true
+serde_json.workspace = true
+
+[[test]]
+name = "deterministic_simulation"
+path = "simulation/deterministic_simulation.rs"
+
+[[test]]
+name = "offline_equivalence"
+path = "simulation/offline_equivalence.rs"
+
+[[test]]
+name = "seven_day_simulation"
+path = "simulation/seven_day_simulation.rs"
+
+[[test]]
+name = "one_year_simulation"
+path = "simulation/one_year_simulation.rs"
+
+[[test]]
+name = "save_load_flow"
+path = "persistence/save_load_flow.rs"
+
+[[test]]
+name = "atomic_save"
+path = "persistence/atomic_save.rs"
+
+[[test]]
+name = "corrupted_save_recovery"
+path = "persistence/corrupted_save_recovery.rs"
+
+[[test]]
+name = "concurrent_save_lock"
+path = "persistence/concurrent_save_lock.rs"
+
+[[test]]
+name = "migration_compatibility"
+path = "persistence/migration_compatibility.rs"

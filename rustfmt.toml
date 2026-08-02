@@ -1,0 +1,8 @@
+# Stable-only options. Nightly-gated settings (imports_granularity,
+# group_imports, wrap_comments) are deliberately omitted so that
+# `cargo fmt --check` behaves identically for every contributor and in CI.
+edition = "2024"
+max_width = 100
+newline_style = "Unix"
+use_field_init_shorthand = true
+use_try_shorthand = true

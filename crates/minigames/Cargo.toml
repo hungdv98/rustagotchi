@@ -1,0 +1,25 @@
+[package]
+name = "rustagotchi-minigames"
+description = "Self-contained minigames that report a MinigameResult back to the domain."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "minigames"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

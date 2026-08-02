@@ -1,0 +1,13 @@
+(
+  definitions: [
+    (id: "emberling", name_key: "species.emberling", element: ember, base: true, move_pool: {
+      hatchling: ["tackle", "warm_nuzzle"], child: ["tackle", "spark_bite"], teen: ["spark_bite", "cinder_dash"], adult: ["flame_arc", "cinder_dash"], elder: ["flame_arc", "solar_roar"],
+    }),
+    (id: "stormling", name_key: "species.stormling", element: storm, move_pool: {
+      hatchling: ["tackle", "static_puff"], child: ["static_puff", "gust"], teen: ["gust", "bolt_dash"], adult: ["thunder_clap", "bolt_dash"], elder: ["thunder_clap", "sky_break"],
+    }),
+    (id: "aquafin", name_key: "species.aquafin", element: aqua, move_pool: {
+      hatchling: ["tackle", "bubble_pop"], child: ["bubble_pop", "fin_slash"], teen: ["fin_slash", "tidal_spin"], adult: ["tidal_spin", "riptide"], elder: ["riptide", "deep_song"],
+    }),
+  ],
+)

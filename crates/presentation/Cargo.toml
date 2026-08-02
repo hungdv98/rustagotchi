@@ -1,0 +1,31 @@
+[package]
+name = "rustagotchi-presentation"
+description = "Bevy scenes, UI, animation, audio and view models."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "presentation"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-application.workspace = true
+rustagotchi-minigames.workspace = true
+bevy.workspace = true
+tracing.workspace = true
+accesskit.workspace = true
+
+[dev-dependencies]
+rustagotchi-content.workspace = true
+rustagotchi-simulation.workspace = true
+rustagotchi-persistence.workspace = true
+tempfile.workspace = true

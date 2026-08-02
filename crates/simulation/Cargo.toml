@@ -1,0 +1,38 @@
+[package]
+name = "rustagotchi-simulation"
+description = "Fixed-step simulation: needs decay, health, aging, evolution, AI, combat and breeding resolution."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "simulation"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-content.workspace = true
+serde.workspace = true
+ron.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+smallvec.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+insta.workspace = true
+tempfile.workspace = true
+criterion.workspace = true
+
+[[bench]]
+name = "simulation"
+harness = false

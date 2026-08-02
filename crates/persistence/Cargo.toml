@@ -1,0 +1,36 @@
+[package]
+name = "rustagotchi-persistence"
+description = "SQLite-backed save repository: versioned snapshots, migrations, checksums, backups."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "persistence"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-application.workspace = true
+serde.workspace = true
+rmp-serde.workspace = true
+zstd.workspace = true
+sha2.workspace = true
+rusqlite.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+fs4.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+proptest.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,49 @@
+[package]
+name = "rustagotchi-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+rustagotchi-domain = { path = "../crates/domain" }
+rustagotchi-content = { path = "../crates/content" }
+rustagotchi-simulation = { path = "../crates/simulation" }
+rustagotchi-application = { path = "../crates/application" }
+rustagotchi-persistence = { path = "../crates/persistence" }
+rmp-serde = "1.3"
+ron = "0.12"
+
+[[bin]]
+name = "resolve_battle"
+path = "fuzz_targets/resolve_battle.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "generate_offspring"
+path = "fuzz_targets/generate_offspring.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "load_save"
+path = "fuzz_targets/load_save.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_content"
+path = "fuzz_targets/parse_content.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

@@ -1,0 +1,31 @@
+name: Content validation
+
+on:
+  pull_request:
+    paths:
+      - "assets/**"
+      - "crates/content/**"
+      - "apps/simulation-cli/**"
+      - ".github/workflows/content-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "assets/**"
+      - "crates/content/**"
+      - "apps/simulation-cli/**"
+
+concurrency:
+  group: content-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+      - name: Validate authored content
+        run: cargo run -p simulation-cli -- validate-content
+      - name: Test validation failures
+        run: cargo test -p rustagotchi-content --all-features

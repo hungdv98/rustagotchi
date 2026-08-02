@@ -1,0 +1,28 @@
+[package]
+name = "rustagotchi-application"
+description = "Use-case layer: commands, handlers, queries, DTOs and the ports the outside world implements."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "application"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-content.workspace = true
+rustagotchi-simulation.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+insta.workspace = true

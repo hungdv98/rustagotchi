@@ -1,0 +1,57 @@
+[graph]
+targets = [
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+all-features = true
+
+[advisories]
+ignore = []
+
+[licenses]
+# Kept to exactly the licences currently in the graph. cargo-deny warns about
+# allowed-but-unencountered entries, so a permissive wishlist here would make
+# the check noisy and train people to ignore it. Add an entry when a dependency
+# actually needs it -- that is a decision worth seeing in a diff.
+allow = [
+    "MIT",
+    # Bevy's shader/data-layout stack uses the no-attribution MIT variant.
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "ISC",
+    # tinyvec's generated Unicode tables are dedicated to the public domain.
+    "CC0-1.0",
+    "Unicode-3.0",
+    "Zlib",
+    # option-ext, via dirs-sys <- directories. MPL-2.0 is file-scoped weak
+    # copyleft: it obliges us to publish changes to those files, not to our own
+    # source, so it is fine for a shipped binary. Revisit if a future MPL crate
+    # is one we need to fork.
+    "MPL-2.0",
+]
+confidence-threshold = 0.93
+# Our own crates are `publish = false` and carry no third-party obligations.
+private = { ignore = true }
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Internal crates are referenced by path with no version requirement, which
+# cargo-deny reads as a wildcard. Permitted for our own unpublished crates only;
+# a wildcard on a real registry dependency still fails.
+allow-wildcard-paths = true
+# Crates that must never enter the dependency graph at all. The per-crate
+# architecture guard in scripts/check-deps.* is the primary defence for
+# dependency *direction*; this list is for things nothing should ever pull in.
+deny = [
+    { name = "openssl" },
+    { name = "openssl-sys" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

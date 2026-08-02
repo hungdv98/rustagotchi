@@ -1,0 +1,11 @@
+(
+  need_decay_per_tick: (hunger: 25, energy: 18, hygiene: 12, bladder: 20, social: 8, fun: 10),
+  neglect_damage_per_tick: 100,
+  passive_experience_per_tick: 14,
+  illness_roll_numerator_per_day: 1,
+  illness_roll_denominator: 20,
+  illness_damage_per_tick: 5,
+  habit_decay_per_day: 50,
+  memory_decay_per_day: 50,
+  stages: (child_days: 1, teen_days: 3, adult_days: 7, elder_days: 365),
+)

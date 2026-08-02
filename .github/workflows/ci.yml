@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Fast feedback: formatting is the cheapest possible failure, so it runs
+  # alone and does not wait on a build matrix.
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install toolchain
+        run: rustup show active-toolchain   # honours rust-toolchain.toml
+      - run: cargo fmt --all -- --check
+
+  # The architecture guard from ADR 0002. Fails on any change to the dependency
+  # closure of the core crates that has not been reviewed into the snapshots.
+  architecture:
+    name: dependency direction
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+      - run: ./scripts/check-deps.sh
+
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install toolchain
+        run: rustup show active-toolchain
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
+      - name: Install Linux render dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes xvfb xauth mesa-vulkan-drivers libasound2-dev libudev-dev
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Test
+        run: cargo nextest run --workspace --all-features
+
+      - name: Doctests
+        run: cargo test --workspace --all-features --doc
+
+      - name: Rendered UI verification (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a cargo run -p rustagotchi-desktop --bin render-verify
+
+      - name: Rendered UI verification (Windows)
+        if: runner.os == 'Windows'
+        run: cargo run -p rustagotchi-desktop --bin render-verify
+
+      - name: Upload rendered UI artifact
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-ui-${{ matrix.os }}
+          path: target/render-verification/rustagotchi-home.png
+          if-no-files-found: error
+
+      - name: Release build
+        run: cargo build --workspace --release
+
+  # Licence policy and advisory scanning. Split out because it does not need
+  # the build matrix and its failures have a different owner.
+  supply-chain:
+    name: supply chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny,cargo-audit
+      - run: cargo deny check
+      - run: cargo audit
+
+  # Coverage gate on the pure core only. There is deliberately no target for
+  # crates/presentation. Enabled from Phase 1, when there is logic to cover.
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    if: false  # TODO(Phase 1): enable once crates/domain has its first modules
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov,cargo-nextest
+      - name: Coverage (domain + simulation, >= 85%)
+        run: |
+          cargo llvm-cov nextest \
+            -p rustagotchi-domain -p rustagotchi-simulation \
+            --fail-under-lines 85

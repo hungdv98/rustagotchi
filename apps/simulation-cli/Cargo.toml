@@ -1,0 +1,37 @@
+[package]
+name = "simulation-cli"
+description = "Headless driver for the Rustagotchi core: simulate, inspect saves, validate content, benchmark."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "simulation-cli"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rustagotchi-domain.workspace = true
+rustagotchi-application.workspace = true
+rustagotchi-simulation.workspace = true
+rustagotchi-content.workspace = true
+rustagotchi-persistence.workspace = true
+rustagotchi-platform.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+ron.workspace = true
+tempfile.workspace = true
+
+[dev-dependencies]
+rustagotchi-test-support.workspace = true
+tempfile.workspace = true

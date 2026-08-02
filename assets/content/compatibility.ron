@@ -1,0 +1,13 @@
+(
+  definitions: [
+    (first: "emberling", second: "emberling", chance_percent: "70"),
+    (first: "emberling", second: "stormling", chance_percent: "55"),
+    (first: "emberling", second: "aquafin", chance_percent: "45"),
+    (first: "stormling", second: "emberling", chance_percent: "55"),
+    (first: "stormling", second: "stormling", chance_percent: "70"),
+    (first: "stormling", second: "aquafin", chance_percent: "60"),
+    (first: "aquafin", second: "emberling", chance_percent: "45"),
+    (first: "aquafin", second: "stormling", chance_percent: "60"),
+    (first: "aquafin", second: "aquafin", chance_percent: "70"),
+  ],
+)
