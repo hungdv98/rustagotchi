@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload rendered UI artifact
         if: runner.os == 'Linux' || runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rendered-ui-${{ matrix.os }}
           path: target/render-verification/rustagotchi-home.png
