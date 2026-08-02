@@ -184,22 +184,40 @@ fn refresh_view_model(
 
 fn record_command_success(command: &Command, view: &mut GameViewModel) {
     let notice = match command {
-        Command::CreatePet { .. } => Some("Pet adopted."),
-        Command::ReleasePet { .. } => Some("Pet released."),
-        Command::ResetGame { .. } => Some("Game reset. Adopt a new companion."),
-        Command::UnlockAdoptionSlot => Some("Adoption slot unlocked."),
+        Command::CreatePet { .. } => Some("Pet adopted.".into()),
+        Command::ReleasePet { .. } => Some("Pet released.".into()),
+        Command::ResetGame { .. } => Some("Game reset. Adopt a new companion.".into()),
+        Command::UnlockAdoptionSlot => Some("Adoption slot unlocked.".into()),
         Command::AdvanceTo { .. } => None,
-        Command::FeedPet { .. } => Some("Pet fed successfully."),
-        Command::Breed { .. } => Some("Egg created."),
-        Command::HatchEgg { .. } => Some("Egg hatched."),
-        Command::StartBattle { .. } => Some("Battle started."),
-        Command::ResolveBattle { .. } => Some("Battle resolved."),
-        Command::Save { .. } => Some("Game saved."),
-        Command::Load { .. } => Some("Save slot loaded."),
+        Command::FeedPet { pet, .. } => {
+            let summary = view.summary.as_ref();
+            let name = summary
+                .and_then(|summary| {
+                    summary
+                        .pets
+                        .iter()
+                        .find(|candidate| candidate.id == pet.to_string())
+                })
+                .map_or("Pet", |pet| pet.name.as_str());
+            let apples = summary.map_or(0, |summary| {
+                summary
+                    .inventory
+                    .iter()
+                    .find(|item| item.item_id == "apple_slice")
+                    .map_or(0, |item| item.quantity)
+            });
+            Some(format!("{name} enjoyed an apple. {apples} slices remain."))
+        }
+        Command::Breed { .. } => Some("Egg created.".into()),
+        Command::HatchEgg { .. } => Some("Egg hatched.".into()),
+        Command::StartBattle { .. } => Some("Battle started. Choose a tactic.".into()),
+        Command::ResolveBattle { .. } => None,
+        Command::Save { .. } => Some("Game saved.".into()),
+        Command::Load { .. } => Some("Save slot loaded.".into()),
     };
     if let Some(notice) = notice {
         view.last_error = None;
-        view.last_notice = Some(notice.into());
+        view.last_notice = Some(notice);
     }
 }
 
@@ -236,6 +254,11 @@ fn record_battle_result(
                     experience_for_next_level: pet.experience_for_next_level,
                     levels_gained: *levels_gained,
                 });
+                // The result card is the authoritative completion feedback;
+                // a global "Battle resolved" notice would follow the player
+                // onto unrelated screens.
+                view.last_error = None;
+                view.last_notice = None;
             }
             _ => {}
         }

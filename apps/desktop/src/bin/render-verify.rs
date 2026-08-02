@@ -10,8 +10,8 @@ use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured};
 use bevy::window::{PresentMode, WindowPlugin, WindowResolution};
 use content::ContentLoader;
 use domain::genetics::{Ancestry, GeneticProfile, Parentage};
-use domain::identifiers::{PetId, SaveSlotId, SpeciesId};
-use domain::pet::{Experience, Personality, Pet, PetName};
+use domain::identifiers::{ItemId, PetId, SaveSlotId, SpeciesId};
+use domain::pet::{Experience, NeedKind, NeedValue, Personality, Pet, PetName};
 use domain::rng::WorldSeed;
 use domain::time::{Tick, UnixSeconds};
 use presentation::{
@@ -47,6 +47,22 @@ fn main() -> Result<()> {
     } else {
         PET_COUNT as u64 + 1
     };
+    if matches!(screen, VerificationScreen::PetStatus) {
+        for pet in state.simulation.pets.values_mut() {
+            pet.set_need(
+                NeedKind::Hunger,
+                NeedValue::new(domain::units::Milli(82_000)),
+                Tick::ZERO,
+            );
+        }
+        state
+            .inventory
+            .add(
+                ItemId::new("apple_slice").expect("built-in item id is valid"),
+                5,
+            )
+            .expect("verification inventory has capacity");
+    }
     let mut verification_view = GameViewModel::default();
     if matches!(screen, VerificationScreen::BattleResult) {
         let winner = state

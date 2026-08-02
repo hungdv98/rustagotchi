@@ -275,7 +275,7 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
     assert_text_contains(&mut app, "Nova");
 
     activate(&mut app, "Status");
-    assert_button_disabled(&mut app, "Pet is full");
+    assert_button_disabled(&mut app, "Pet is full, No food needed");
     assert_button_disabled(&mut app, "Only one pet");
     activate(&mut app, "Home");
 
@@ -286,12 +286,15 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
     pump(&mut app, 2);
 
     activate(&mut app, "Status");
-    activate(&mut app, "Feed apple (5 left)");
+    activate(&mut app, "Feed apple, 5 slices available");
     let view = app.world().resource::<GameViewModel>();
     assert_eq!(view.summary.as_ref().unwrap().pets.len(), 1);
     assert_eq!(view.summary.as_ref().unwrap().inventory[0].quantity, 4);
-    assert_eq!(view.last_notice.as_deref(), Some("Pet fed successfully."));
-    assert_button_disabled(&mut app, "Pet is full");
+    assert_eq!(
+        view.last_notice.as_deref(),
+        Some("Nova enjoyed an apple. 4 slices remain.")
+    );
+    assert_button_disabled(&mut app, "Pet is full, No food needed");
 
     let pet = app
         .world()
@@ -365,6 +368,7 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
         assert_eq!(result.coins_earned, 50);
         assert_eq!(result.experience_earned, 100);
         assert!(result.level >= 2);
+        assert_eq!(view.last_notice, None);
         format!(
             "Level {} progress: {}/{} XP",
             result.level, result.experience, result.experience_for_next_level
@@ -372,6 +376,12 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
     };
     assert_text_contains(&mut app, "VICTORY -");
     assert_text_contains(&mut app, &expected_progress);
+    activate(&mut app, "Home");
+    assert_eq!(
+        app.world().resource::<GameViewModel>().last_notice,
+        None,
+        "battle completion feedback must not leak onto Home"
+    );
 
     app.world_mut().write_message(AppExit::Success);
     pump(&mut app, 3);

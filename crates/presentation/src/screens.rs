@@ -59,6 +59,24 @@ pub(crate) enum NavigateTo {
     ToggleReducedMotion,
 }
 
+impl NavigateTo {
+    const fn changes_screen(self) -> bool {
+        matches!(
+            self,
+            Self::Continue
+                | Self::MainMenu
+                | Self::RequestReset
+                | Self::PetStatus
+                | Self::Inventory
+                | Self::RequestRelease
+                | Self::Breeding
+                | Self::AddCompanion
+                | Self::Battle
+                | Self::SaveSlots
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug, Message)]
 pub(crate) struct MenuActivated(NavigateTo);
 
@@ -76,6 +94,12 @@ pub(crate) struct PetNeedValue(usize);
 
 #[derive(Component, Debug)]
 pub(crate) struct CareActionButton;
+
+#[derive(Component, Debug)]
+pub(crate) struct CareActionTitle;
+
+#[derive(Component, Debug)]
+pub(crate) struct CareActionDetail;
 
 #[derive(Component, Debug)]
 pub(crate) struct BreedingActionButton;
@@ -546,7 +570,7 @@ pub(crate) fn spawn_pet_status(
     selection: Res<'_, PetSelection>,
     asset_server: Res<'_, AssetServer>,
 ) {
-    let (care_label, care_action, _) = care_action(&view, *selection);
+    let (care_title, care_detail, care_action, _) = care_action(&view, *selection);
     commands.spawn((
         ScreenRoot,
         pet_status_screen_node(),
@@ -556,10 +580,52 @@ pub(crate) fn spawn_pet_status(
             pet_status_hero(&asset_server, &view, *selection),
             need_panel(&view, *selection),
             status_banner(&view),
-            (menu_button(&care_label, care_action), CareActionButton,),
+            care_action_button(&care_title, &care_detail, care_action),
             pet_status_navigation(&view),
         ],
     ));
+}
+
+fn care_action_button(title: &str, detail: &str, action: NavigateTo) -> impl Bundle + use<> {
+    let mut accessibility = AccessibilityTreeNode::new(Role::Button);
+    accessibility.set_label(format!("{title}, {detail}"));
+    (
+        bevy::ui_widgets::Button,
+        action,
+        CareActionButton,
+        TabIndex(0),
+        Hovered::default(),
+        AccessibilityNode(accessibility),
+        Node {
+            width: percent(100),
+            max_width: px(360),
+            min_height: px(68),
+            flex_direction: FlexDirection::Column,
+            row_gap: px(2),
+            border: UiRect::all(px(3)),
+            padding: UiRect::axes(px(12), px(7)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            border_radius: BorderRadius::all(px(12)),
+            ..default()
+        },
+        BorderColor::all(Color::NONE),
+        BackgroundColor(Color::srgb(0.16, 0.25, 0.32)),
+        children![
+            (
+                Text::new(title.to_owned()),
+                CareActionTitle,
+                TextFont::from_font_size(20.0),
+                TextColor(Color::WHITE),
+            ),
+            (
+                Text::new(detail.to_owned()),
+                CareActionDetail,
+                TextFont::from_font_size(14.0),
+                TextColor(Color::srgb(0.70, 0.78, 0.84)),
+            ),
+        ],
+    )
 }
 
 fn pet_status_hero(
@@ -1190,7 +1256,17 @@ fn status_banner(view: &GameViewModel) -> impl Bundle + use<> {
     (
         Text::new(text.clone()),
         StatusDetails,
-        content_node(),
+        Node {
+            width: percent(100),
+            max_width: px(620),
+            min_height: px(36),
+            padding: UiRect::axes(px(12), px(7)),
+            border: UiRect::all(px(1)),
+            border_radius: BorderRadius::all(px(10)),
+            ..default()
+        },
+        BackgroundColor(status_background(is_error)),
+        BorderColor::all(status_border(is_error)),
         TextLayout::justify(Justify::Center),
         TextFont::from_font_size(17.0),
         TextColor(status_color(is_error)),
@@ -1278,12 +1354,15 @@ pub(crate) fn navigate_buttons(
     mut next: ResMut<'_, NextState<AppState>>,
     state: Res<'_, State<AppState>>,
     active: Res<'_, ActiveSaveSlot>,
-    view: Res<'_, GameViewModel>,
+    mut view: ResMut<'_, GameViewModel>,
     mut selection: ResMut<'_, PetSelection>,
     mut io: NavigationIo<'_, '_>,
 ) {
     for activation in activations.read() {
         let destination = &activation.0;
+        if destination.changes_screen() {
+            view.last_notice = None;
+        }
         match destination {
             NavigateTo::Continue => {
                 if view
@@ -1716,27 +1795,43 @@ pub(crate) fn refresh_care_action(
         (
             Entity,
             &mut NavigateTo,
-            &Children,
             &mut AccessibilityNode,
             Has<InteractionDisabled>,
         ),
         With<CareActionButton>,
     >,
-    mut labels: Query<'_, '_, (&mut Text, &mut TextColor)>,
+    mut titles: Query<
+        '_,
+        '_,
+        (&mut Text, &mut TextColor),
+        (With<CareActionTitle>, Without<CareActionDetail>),
+    >,
+    mut details: Query<
+        '_,
+        '_,
+        (&mut Text, &mut TextColor),
+        (With<CareActionDetail>, Without<CareActionTitle>),
+    >,
 ) {
-    let (label, action, disabled) = care_action(&view, *selection);
-    for (entity, mut current_action, children, mut accessibility, was_disabled) in &mut buttons {
+    let (title, detail, action, disabled) = care_action(&view, *selection);
+    for (entity, mut current_action, mut accessibility, was_disabled) in &mut buttons {
         *current_action = action;
-        accessibility.set_label(label.clone());
-        for child in children.iter() {
-            if let Ok((mut text, mut color)) = labels.get_mut(child) {
-                **text = label.clone();
-                color.0 = if disabled {
-                    Color::srgb(0.52, 0.57, 0.62)
-                } else {
-                    Color::WHITE
-                };
-            }
+        accessibility.set_label(format!("{title}, {detail}"));
+        for (mut text, mut color) in &mut titles {
+            **text = title.clone();
+            color.0 = if disabled {
+                Color::srgb(0.52, 0.57, 0.62)
+            } else {
+                Color::WHITE
+            };
+        }
+        for (mut text, mut color) in &mut details {
+            **text = detail.clone();
+            color.0 = if disabled {
+                Color::srgb(0.43, 0.48, 0.53)
+            } else {
+                Color::srgb(0.70, 0.78, 0.84)
+            };
         }
         if disabled && !was_disabled {
             commands.entity(entity).insert(InteractionDisabled);
@@ -1908,6 +2003,8 @@ pub(crate) fn refresh_status_text(
             &mut TextColor,
             &mut Visibility,
             &mut AccessibilityNode,
+            &mut BackgroundColor,
+            &mut BorderColor,
         ),
         With<StatusDetails>,
     >,
@@ -1916,7 +2013,9 @@ pub(crate) fn refresh_status_text(
         return;
     }
     let (message, is_error) = status_message(&view);
-    for (mut value, mut color, mut visibility, mut accessibility) in &mut status {
+    for (mut value, mut color, mut visibility, mut accessibility, mut background, mut border) in
+        &mut status
+    {
         **value = message.clone();
         color.0 = status_color(is_error);
         *visibility = if message.is_empty() {
@@ -1926,6 +2025,8 @@ pub(crate) fn refresh_status_text(
         };
         accessibility.set_role(if is_error { Role::Alert } else { Role::Status });
         accessibility.set_label(message.clone());
+        background.0 = status_background(is_error);
+        *border = BorderColor::all(status_border(is_error));
     }
 }
 
@@ -2005,6 +2106,22 @@ fn status_color(is_error: bool) -> Color {
     }
 }
 
+fn status_background(is_error: bool) -> Color {
+    if is_error {
+        Color::srgb(0.19, 0.075, 0.07)
+    } else {
+        Color::srgb(0.065, 0.16, 0.12)
+    }
+}
+
+fn status_border(is_error: bool) -> Color {
+    if is_error {
+        Color::srgb(0.64, 0.22, 0.18)
+    } else {
+        Color::srgb(0.20, 0.50, 0.34)
+    }
+}
+
 fn pet_status_text(view: &GameViewModel, selection: PetSelection) -> String {
     let Some(summary) = &view.summary else {
         return "No world loaded".to_owned();
@@ -2050,12 +2167,25 @@ fn apple_count(view: &GameViewModel) -> u32 {
     })
 }
 
-fn care_action(view: &GameViewModel, selection: PetSelection) -> (String, NavigateTo, bool) {
+fn care_action(
+    view: &GameViewModel,
+    selection: PetSelection,
+) -> (String, String, NavigateTo, bool) {
     let Some(pet) = selected_pet(view, selection) else {
-        return ("Care unavailable".into(), NavigateTo::Noop, true);
+        return (
+            "Care unavailable".into(),
+            "No pet selected".into(),
+            NavigateTo::Noop,
+            true,
+        );
     };
     if !pet.alive {
-        return ("Care unavailable".into(), NavigateTo::Noop, true);
+        return (
+            "Care unavailable".into(),
+            "This pet cannot be fed".into(),
+            NavigateTo::Noop,
+            true,
+        );
     }
     let hunger = pet
         .needs
@@ -2063,14 +2193,25 @@ fn care_action(view: &GameViewModel, selection: PetSelection) -> (String, Naviga
         .find(|need| need.kind == "hunger")
         .map_or(100_000, |need| need.value_milli);
     if hunger >= 100_000 {
-        return ("Pet is full".into(), NavigateTo::Noop, true);
+        return (
+            "Pet is full".into(),
+            "No food needed".into(),
+            NavigateTo::Noop,
+            true,
+        );
     }
     let apples = apple_count(view);
     if apples == 0 {
-        return ("No apple slices".into(), NavigateTo::Noop, true);
+        return (
+            "No apple slices".into(),
+            "Inventory is empty".into(),
+            NavigateTo::Noop,
+            true,
+        );
     }
     (
-        format!("Feed apple ({apples} left)"),
+        "Feed apple".into(),
+        format!("{apples} slices available"),
         NavigateTo::FeedSelectedPet,
         false,
     )
@@ -2424,7 +2565,8 @@ mod tests {
         assert_eq!(
             care_action(&view, PetSelection::default()),
             (
-                "Feed apple (4 left)".into(),
+                "Feed apple".into(),
+                "4 slices available".into(),
                 NavigateTo::FeedSelectedPet,
                 false
             )
@@ -2439,7 +2581,12 @@ mod tests {
 
         assert_eq!(
             care_action(&view, PetSelection::default()),
-            ("Pet is full".into(), NavigateTo::Noop, true)
+            (
+                "Pet is full".into(),
+                "No food needed".into(),
+                NavigateTo::Noop,
+                true
+            )
         );
     }
 

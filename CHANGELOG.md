@@ -36,6 +36,11 @@ changes are called out under **Saves** below.
 
 ### Changed — desktop presentation
 
+- Pet feeding now uses a two-level care card with the primary action and the
+  number of apple slices available, plus clearer full/empty-inventory states.
+- Success and error notices now render as distinct bordered banners. Routine
+  success notices clear when leaving their screen, and battle completion uses
+  the detailed result card instead of a global notice that follows the player.
 - Home is a compact named-pet dashboard with species-specific portraits and
   `Status`, `Breed`, and `Battle` quick actions.
 - Pet Status now pairs the selected pet's portrait and identity with its need

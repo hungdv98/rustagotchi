@@ -155,8 +155,9 @@ without hiding status text.
    the next level, and labeled need
    meters beside its live species portrait. Fullness is shown instead of
    "hunger" so a higher percentage always means a healthier state.
-3. When fullness is below 100%, select **Feed apple (N left)** to feed that
-   pet. At 100%, the disabled action reads **Pet is full**.
+3. When fullness is below 100%, select the **Feed apple** care card. Its second
+   line shows how many slices are available. At 100%, the disabled card reads
+   **Pet is full — No food needed**.
 4. Select **Next pet** to change the active pet when more than one exists. With
    one pet, the disabled control reads **Only one pet**.
 5. Select **Inventory** to inspect all item quantities.
