@@ -357,10 +357,21 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
     activate(&mut app, "Battle");
     activate(&mut app, "Start battle");
     activate(&mut app, "Power");
-    let view = app.world().resource::<GameViewModel>();
-    assert!(view.summary.as_ref().unwrap().active_battles.is_empty());
-    let result = view.last_battle_result.as_deref().unwrap();
-    assert!(result.contains("Winner: Nova") || result.contains("Winner: Bolt"));
+    let expected_progress = {
+        let view = app.world().resource::<GameViewModel>();
+        assert!(view.summary.as_ref().unwrap().active_battles.is_empty());
+        let result = view.last_battle_result.as_ref().unwrap();
+        assert!(result.winner_name == "Nova" || result.winner_name == "Bolt");
+        assert_eq!(result.coins_earned, 50);
+        assert_eq!(result.experience_earned, 100);
+        assert!(result.level >= 2);
+        format!(
+            "Level {} progress: {}/{} XP",
+            result.level, result.experience, result.experience_for_next_level
+        )
+    };
+    assert_text_contains(&mut app, "VICTORY -");
+    assert_text_contains(&mut app, &expected_progress);
 
     app.world_mut().write_message(AppExit::Success);
     pump(&mut app, 3);
@@ -400,6 +411,43 @@ fn headless_ui_flow_cares_battles_saves_and_reloads() {
             .tick,
         120
     );
+}
+
+#[test]
+fn coins_unlock_and_persist_an_adoption_slot_through_the_real_ui() {
+    let temporary = tempfile::tempdir().unwrap();
+    let repository = SqliteSaveRepository::new(temporary.path().join("economy.sqlite3")).unwrap();
+    let seed = WorldSeed(33);
+    let slot = SaveSlotId::derive(seed, Tick::ZERO, 1);
+    let mut state = GameState::new(seed, UnixSeconds::EPOCH);
+    state.simulation.insert_pet(adult_founder(seed, 1));
+    state.wallet = domain::economy::Wallet::with_balance(domain::economy::Currency(150));
+    state.next_entity_ordinal = 2;
+    let mut app = build_app(state, repository.clone(), slot);
+
+    activate(&mut app, "Continue");
+    activate(&mut app, "Adopt");
+    assert_text_contains(&mut app, "Adopted 1/2");
+    activate(
+        &mut app,
+        "Unlock slot 3 of 8 - 100 coins (ready; 150 owned)",
+    );
+    let summary = app
+        .world()
+        .resource::<GameViewModel>()
+        .summary
+        .as_ref()
+        .unwrap();
+    assert_eq!(summary.balance, 50);
+    assert_eq!(summary.max_adopted_pets, 3);
+    assert_eq!(summary.next_adoption_slot_cost, Some(200));
+
+    app.world_mut().write_message(AppExit::Success);
+    pump(&mut app, 3);
+    drop(app);
+    let saved = repository.load(slot).unwrap();
+    assert_eq!(saved.adoption_slot_upgrades, 1);
+    assert_eq!(saved.wallet.balance().0, 50);
 }
 
 #[test]

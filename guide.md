@@ -135,9 +135,11 @@ succeeds; background clock updates do not dismiss them.
 4. Select **Emberling**, **Stormling**, or **Aquafin**.
 5. The game creates the world and opens **Home**. The name persists across saves.
 
-The adoption screen and Home summary display **Adopted N/2**. A world may have
-two directly adopted founder pets; bred and hatched offspring do not consume
-those two adoption slots.
+The adoption screen and Home summary display **Adopted N/capacity**. A new world
+starts with two founder slots. Use **Adopt** on Home to return to this screen and
+buy permanent slot upgrades with battle-earned coins. Prices are 100, 200, 400,
+800, 1,600, and 3,200 coins, raising the limit one slot at a time to eight.
+Bred and hatched offspring do not consume founder adoption slots.
 
 The Home screen displays a responsive named gallery of up to eight pets using
 distinct Emberling, Stormling, and Aquafin artwork as pets evolve. Each
@@ -149,7 +151,8 @@ without hiding status text.
 ### Inspect and care for a pet
 
 1. From **Home**, select **Status**.
-2. Review the selected pet's species, life stage, mood, and labeled need
+2. Review the selected pet's species, life stage, mood, battle level, XP toward
+   the next level, and labeled need
    meters beside its live species portrait. Fullness is shown instead of
    "hunger" so a higher percentage always means a healthier state.
 3. When fullness is below 100%, select **Feed apple (N left)** to feed that
@@ -161,15 +164,17 @@ without hiding status text.
 The first founder receives five apple slices. Feeding consumes one slice only
 when the care command succeeds.
 
-### Adopt the second founder
+### Adopt founders and unlock more slots
 
 1. From **Home**, open **Breed** or **Battle**.
 2. If the world has only one pet, select **Adopt companion**.
 3. Enter a name and select **Emberling**, **Stormling**, or **Aquafin**.
 4. The game returns to **Home**.
 
-The current desktop onboarding permits two founder pets. Later offspring are
-created by breeding and hatching.
+After filling the initial two founder slots, win two battles to earn the 100
+coins needed for the first upgrade. From Home, select **Adopt**, review the next
+slot price and your balance, then select **Unlock slot 3 of 8**. Each purchase
+is saved with the world. A failed purchase never removes coins.
 
 ### Release a pet
 
@@ -179,7 +184,7 @@ created by breeding and hatching.
    **Keep pet** to cancel.
 
 A pet cannot be released during an active battle or while it is the parent of
-an unhatched egg. Releasing an adopted founder frees one of the two adoption
+an unhatched egg. Releasing an adopted founder frees one of the unlocked adoption
 slots. Release is permanent, so save backups are the only recovery route after
 the game is saved.
 
@@ -214,7 +219,12 @@ their breeding cooldown.
 5. Choose **Power** for maximum move power, **Precision** for accuracy, or
    **Efficiency** for damage per energy. The selected deterministic tactic
    drives both fighters' move choices.
-6. Review the result and awarded reward on the battle screen.
+6. Review the dedicated victory card. It names the winner, shows the 50-coin and
+   100-XP rewards, updated wallet, current level, XP progress, and any level-up.
+
+The winner receives XP and can advance through levels 1-99. Level 1 requires
+100 XP, so the first victory visibly reaches level 2. Coins are shared by the
+world and fund permanent adoption-slot upgrades.
 
 ### Save, quit, and apply offline progress
 
@@ -410,7 +420,7 @@ frame. By default the artifact is written to
 the real Windows window stack and Linux Xvfb/Mesa stack, then uploads both PNGs.
 
 To capture another screen, set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`,
-`pet-creation`, or `battle`. In PowerShell:
+`pet-creation`, `battle`, or `battle-result`. In PowerShell:
 
 ```powershell
 $env:RUSTAGOTCHI_RENDER_SCREEN = "pet-status"

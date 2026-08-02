@@ -40,6 +40,12 @@ impl Query for GameSummaryQuery {
                 activity: pet.activity.current().name().to_owned(),
                 alive: pet.is_alive(),
                 age_ticks: pet.progression.age(state.simulation.tick).as_ticks(),
+                level: pet.progression.level().get(),
+                experience: pet.progression.experience().0,
+                experience_for_next_level: domain::pet::PetProgression::required_for_next(
+                    pet.progression.level(),
+                ),
+                experience_progress_milli: pet.progression.progress_to_next().0,
                 needs: NeedKind::ALL
                     .into_iter()
                     .map(|kind| NeedDto {
@@ -93,7 +99,10 @@ impl Query for GameSummaryQuery {
                 .values()
                 .filter(|pet| pet.parentage.is_founder())
                 .count(),
-            max_adopted_pets: crate::MAX_ADOPTED_PETS,
+            max_adopted_pets: crate::adopted_pet_capacity(state.adoption_slot_upgrades),
+            maximum_adopted_pets: crate::MAX_ADOPTED_PETS,
+            next_adoption_slot_cost: crate::next_adoption_slot_cost(state.adoption_slot_upgrades)
+                .map(|cost| cost.0),
             pets,
             eggs,
             active_battles,
@@ -161,6 +170,9 @@ mod tests {
         assert_eq!(summary.tick, 0);
         assert_eq!(summary.inventory[0].item_id, "apple_slice");
         assert_eq!(summary.inventory[0].quantity, 2);
+        assert_eq!(summary.max_adopted_pets, crate::BASE_ADOPTED_PETS);
+        assert_eq!(summary.maximum_adopted_pets, crate::MAX_ADOPTED_PETS);
+        assert_eq!(summary.next_adoption_slot_cost, Some(100));
     }
 
     #[test]

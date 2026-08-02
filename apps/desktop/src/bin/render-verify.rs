@@ -11,10 +11,13 @@ use bevy::window::{PresentMode, WindowPlugin, WindowResolution};
 use content::ContentLoader;
 use domain::genetics::{Ancestry, GeneticProfile, Parentage};
 use domain::identifiers::{PetId, SaveSlotId, SpeciesId};
-use domain::pet::{Personality, Pet, PetName};
+use domain::pet::{Experience, Personality, Pet, PetName};
 use domain::rng::WorldSeed;
 use domain::time::{Tick, UnixSeconds};
-use presentation::{ActiveSaveSlot, AppState, EngineResource, RustagotchiPresentationPlugin};
+use presentation::{
+    ActiveSaveSlot, AppState, BattleResultView, EngineResource, GameViewModel,
+    RustagotchiPresentationPlugin,
+};
 use simulation::SimConfig;
 
 const WIDTH: u32 = 1_100;
@@ -44,6 +47,29 @@ fn main() -> Result<()> {
     } else {
         PET_COUNT as u64 + 1
     };
+    let mut verification_view = GameViewModel::default();
+    if matches!(screen, VerificationScreen::BattleResult) {
+        let winner = state
+            .simulation
+            .pets
+            .values_mut()
+            .next()
+            .expect("verification winner exists");
+        let levels_gained = winner.progression.grant(Experience(100));
+        state.wallet = domain::economy::Wallet::with_balance(domain::economy::Currency(50));
+        verification_view.last_battle_result = Some(BattleResultView {
+            winner_name: winner.name.to_string(),
+            coins_earned: 50,
+            balance: 50,
+            experience_earned: 100,
+            level: winner.progression.level().get(),
+            experience: winner.progression.experience().0,
+            experience_for_next_level: domain::pet::PetProgression::required_for_next(
+                winner.progression.level(),
+            ),
+            levels_gained,
+        });
+    }
     let saves: Box<dyn SaveRepository> = Box::new(VerificationRepository);
     let mut engine = GameEngine::new(state, content, config, saves);
     if matches!(screen, VerificationScreen::Battle) {
@@ -57,6 +83,7 @@ fn main() -> Result<()> {
 
     let mut app = App::new();
     app.insert_resource(EngineResource(engine))
+        .insert_resource(verification_view)
         .insert_resource(ActiveSaveSlot(slot))
         .insert_resource(screen)
         .insert_resource(VerificationOutput(output.clone()))
@@ -148,6 +175,7 @@ enum VerificationScreen {
     PetStatus,
     PetCreation,
     Battle,
+    BattleResult,
 }
 
 impl VerificationScreen {
@@ -160,8 +188,9 @@ impl VerificationScreen {
             "pet-status" => Ok(Self::PetStatus),
             "pet-creation" => Ok(Self::PetCreation),
             "battle" => Ok(Self::Battle),
+            "battle-result" => Ok(Self::BattleResult),
             value => anyhow::bail!(
-                "unsupported RUSTAGOTCHI_RENDER_SCREEN `{value}`; use `home`, `pet-status`, `pet-creation` or `battle`"
+                "unsupported RUSTAGOTCHI_RENDER_SCREEN `{value}`; use `home`, `pet-status`, `pet-creation`, `battle` or `battle-result`"
             ),
         }
     }
@@ -172,6 +201,7 @@ impl VerificationScreen {
             Self::PetStatus => AppState::PetStatus,
             Self::PetCreation => AppState::PetCreation,
             Self::Battle => AppState::Battle,
+            Self::BattleResult => AppState::Battle,
         }
     }
 
@@ -181,6 +211,7 @@ impl VerificationScreen {
             Self::PetStatus => "pet-status",
             Self::PetCreation => "pet-creation",
             Self::Battle => "battle",
+            Self::BattleResult => "battle-result",
         }
     }
 }
@@ -308,7 +339,7 @@ fn validate_screenshot(
                 "captured pet status is missing healthy need-meter feedback"
             );
         }
-        VerificationScreen::Battle => {}
+        VerificationScreen::Battle | VerificationScreen::BattleResult => {}
         VerificationScreen::PetCreation => {}
     }
     exit.write(AppExit::Success);

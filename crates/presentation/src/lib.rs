@@ -30,4 +30,4 @@ pub use feedback::{FeedbackCue, PresentationPreferences};
 pub use performance::{EIGHT_PET_FRAME_BUDGET, FramePerformanceSnapshot};
 pub use plugin::RustagotchiPresentationPlugin;
 pub use resources::{ActiveSaveSlot, EngineResource, PetSelection};
-pub use view_models::GameViewModel;
+pub use view_models::{BattleResultView, GameViewModel};

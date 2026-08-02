@@ -9,6 +9,8 @@ pub struct GameSummaryDto {
     pub clamped_offline_ticks: u64,
     pub adopted_pets: usize,
     pub max_adopted_pets: usize,
+    pub maximum_adopted_pets: usize,
+    pub next_adoption_slot_cost: Option<i64>,
     pub pets: Vec<PetDto>,
     pub eggs: Vec<EggDto>,
     pub active_battles: Vec<BattleDto>,
@@ -43,6 +45,10 @@ pub struct PetDto {
     pub activity: String,
     pub alive: bool,
     pub age_ticks: u64,
+    pub level: u16,
+    pub experience: u32,
+    pub experience_for_next_level: u32,
+    pub experience_progress_milli: i32,
     pub needs: Vec<NeedDto>,
 }
 

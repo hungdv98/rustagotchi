@@ -10,6 +10,18 @@ changes are called out under **Saves** below.
 
 ## [Unreleased]
 
+### Added — battle progression and adoption economy
+
+- Visible pet level and XP progress on Pet Status and a structured battle-result
+  card with winner, rewards, updated wallet, level progress, and level-up feedback.
+- Permanent coin-funded adoption-slot upgrades from two founder slots to eight,
+  with escalating 100/200/400/800/1,600/3,200 coin prices and affordability copy.
+
+### Saves
+
+- Save schema 5 persists purchased adoption-slot upgrades. Schema 1-4 snapshots
+  migrate with the original two-slot capacity.
+
 ### Added — desktop pet identity and tactics
 
 - Persistent, validated pet names entered during adoption and displayed on Home,

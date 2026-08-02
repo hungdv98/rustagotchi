@@ -35,7 +35,7 @@ For a complete setup and gameplay walkthrough, see [guide.md](guide.md).
 
 ### Battle arena
 
-![Two pets facing each other in the tactical Battle arena](docs/images/battle-arena.png)
+![Battle results with winner, coin rewards, level-up, and XP progress](docs/images/battle-arena.png)
 
 ## Getting started
 
@@ -98,7 +98,9 @@ data directory, not in the repository.
 2. Use **Status** to inspect needs, feed a hungry pet, cycle pets, or safely release one.
 3. Adopt a second founder, then use **Breed** after both pets become healthy adults.
 4. Open **Battle**, select two fighters, and choose Power, Precision, or Efficiency.
-5. Use **Menu → Reset game** for a confirmation-protected clean restart.
+   Victories award 50 coins and 100 XP; the result card shows wallet and level progress.
+5. Spend coins on the adoption screen to grow from 2 founder slots to a maximum of 8.
+6. Use **Menu → Reset game** for a confirmation-protected clean restart.
 
 Mouse and keyboard are supported. Use `Tab`/`Shift+Tab` to move focus and
 `Enter` or `Space` to activate a focused control.
@@ -128,7 +130,8 @@ Run the self-closing rendered-window verifier locally with:
 cargo run -p rustagotchi-desktop --bin render-verify
 ```
 
-Set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`, `pet-creation`, or `battle` to
+Set `RUSTAGOTCHI_RENDER_SCREEN` to `pet-status`, `pet-creation`, `battle`, or
+`battle-result` to
 validate those layouts instead of the Home gallery.
 
 All menus support pointer input and keyboard navigation. Use `Tab` and
@@ -142,13 +145,15 @@ feedback cues; routine simulation ticks deliberately remain quiet.
 
 The Home screen renders a responsive named gallery of up to eight Emberling,
 Stormling, and Aquafin portraits. Pet names are validated and persisted in save
-schema 4. Each animation state is driven by that pet's activity exposed
+schema 5. Each animation state is driven by that pet's activity exposed
 through the application DTO, with transient celebration, warning, and impact
 reactions layered on domain-event cues.
 
-Adoption offers all three authored species and displays the two-founder
-capacity on both the adoption screen and Home. Pet Status provides a confirmed
-release flow; active combatants and parents of unhatched eggs are protected.
+Adoption offers all three authored species and starts with two founder slots.
+Battle-earned coins permanently unlock six more slots at escalating prices,
+up to eight. The adoption screen shows the next price, current balance, and
+affordability. Pet Status displays battle level and XP progress and provides a
+confirmed release flow; active combatants and parents of unhatched eggs are protected.
 
 Packaged builds can set `RUSTAGOTCHI_ASSETS` to the directory containing
 `manifest.ron`; development builds discover `./assets` automatically.

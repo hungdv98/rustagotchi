@@ -32,6 +32,7 @@ pub(crate) enum NavigateTo {
     Save,
     RequestReset,
     ConfirmReset,
+    UnlockAdoptionSlot,
     AdoptEmberling,
     AdoptStormling,
     AdoptAquafin,
@@ -255,8 +256,9 @@ pub(crate) fn spawn_pet_creation(mut commands: Commands<'_, '_>, view: Res<'_, G
                 TextColor(Color::srgb(0.58, 0.65, 0.72)),
             ),
             status_banner(&view),
+            adoption_upgrade_button(&view),
             adoption_choices(),
-            menu_button("Back", NavigateTo::MainMenu),
+            menu_button("Home", NavigateTo::Continue),
         ],
     ));
 }
@@ -285,6 +287,38 @@ fn adoption_choices() -> impl Bundle + use<> {
             compact_menu_button("Aquafin", NavigateTo::AdoptAquafin),
         ],
     )
+}
+
+fn adoption_upgrade_button(view: &GameViewModel) -> impl Bundle + use<> {
+    let (label, action) = view.summary.as_ref().map_or_else(
+        || ("Slots unavailable".to_owned(), NavigateTo::Noop),
+        |summary| match summary.next_adoption_slot_cost {
+            Some(cost) => {
+                let affordability = if summary.balance >= cost {
+                    "ready"
+                } else {
+                    "save up"
+                };
+                (
+                    format!(
+                        "Unlock slot {} of {} - {cost} coins ({affordability}; {} owned)",
+                        summary.max_adopted_pets + 1,
+                        summary.maximum_adopted_pets,
+                        summary.balance
+                    ),
+                    NavigateTo::UnlockAdoptionSlot,
+                )
+            }
+            None => (
+                format!(
+                    "All {} adoption slots unlocked",
+                    summary.maximum_adopted_pets
+                ),
+                NavigateTo::Noop,
+            ),
+        },
+    );
+    menu_button(&label, action)
 }
 
 fn pet_name_input() -> impl Bundle + use<> {
@@ -371,6 +405,7 @@ fn home_navigation() -> impl Bundle + use<> {
             ..default()
         },
         children![
+            compact_menu_button("Adopt", NavigateTo::AddCompanion),
             compact_menu_button("Status", NavigateTo::PetStatus),
             compact_menu_button("Breed", NavigateTo::Breeding),
             compact_menu_button("Battle", NavigateTo::Battle),
@@ -743,10 +778,13 @@ fn battle_page(
         children![
             heading(if active {
                 "Battle arena"
+            } else if view.last_battle_result.is_some() {
+                "Battle results"
             } else {
                 "Choose fighters"
             }),
             battle_arena(asset_server, view, selection),
+            battle_result_panel(view),
             (
                 Text::new(battle_guidance(view, active)),
                 content_node(),
@@ -875,9 +913,6 @@ fn fighter_card(
 }
 
 fn battle_guidance(view: &GameViewModel, active: bool) -> String {
-    if let Some(result) = &view.last_battle_result {
-        return result.replace('\n', "  |  ");
-    }
     if active {
         "Choose Power for damage, Precision for accuracy, or Efficiency to conserve energy.".into()
     } else if view
@@ -889,6 +924,58 @@ fn battle_guidance(view: &GameViewModel, active: bool) -> String {
     } else {
         "Select two fighters, compare their move pools, then start the match.".into()
     }
+}
+
+fn battle_result_panel(view: &GameViewModel) -> impl Bundle + use<> {
+    let result = view.last_battle_result.as_ref();
+    let text = result.map_or_else(String::new, |result| {
+        let level_up = if result.levels_gained == 0 {
+            String::new()
+        } else {
+            format!("  LEVEL UP +{}", result.levels_gained)
+        };
+        let percent = if result.experience_for_next_level == u32::MAX {
+            100
+        } else {
+            result.experience.saturating_mul(100) / result.experience_for_next_level.max(1)
+        };
+        format!(
+            "VICTORY - {}{level_up}\n+{} coins  |  Wallet: {}  |  +{} XP\nLevel {} progress: {}/{} XP ({percent}%)",
+            result.winner_name,
+            result.coins_earned,
+            result.balance,
+            result.experience_earned,
+            result.level,
+            result.experience,
+            result.experience_for_next_level,
+        )
+    });
+    (
+        Node {
+            display: if result.is_some() {
+                Display::Flex
+            } else {
+                Display::None
+            },
+            width: percent(100),
+            max_width: px(680),
+            min_height: px(78),
+            padding: UiRect::axes(px(14), px(9)),
+            border: UiRect::all(px(2)),
+            border_radius: BorderRadius::all(px(12)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BorderColor::all(Color::srgb(0.95, 0.70, 0.28)),
+        BackgroundColor(Color::srgb(0.12, 0.105, 0.075)),
+        children![(
+            Text::new(text),
+            TextLayout::justify(Justify::Center),
+            TextFont::from_font_size(16.0),
+            TextColor(Color::srgb(1.0, 0.88, 0.56)),
+        )],
+    )
 }
 
 fn battle_action_row(buttons: [(&str, NavigateTo); 4]) -> impl Bundle + use<> {
@@ -1188,6 +1275,9 @@ pub(crate) fn navigate_buttons(
             NavigateTo::ConfirmReset => {
                 io.commands
                     .write(AppCommand(Command::ResetGame { slot: active.0 }));
+            }
+            NavigateTo::UnlockAdoptionSlot => {
+                io.commands.write(AppCommand(Command::UnlockAdoptionSlot));
             }
             NavigateTo::AdoptEmberling | NavigateTo::AdoptStormling | NavigateTo::AdoptAquafin => {
                 let raw_name = io
@@ -1894,11 +1984,15 @@ fn pet_status_text(view: &GameViewModel, selection: PetSelection) -> String {
     };
     let pet = &summary.pets[index];
     format!(
-        "{} the {} | {} | Mood: {}\nActivity: {} | Age: {} days | Pet {} of {}",
+        "{} the {} | {} | Mood: {}\nLevel {} | XP {}/{} ({}%)\nActivity: {} | Age: {} days | Pet {} of {}",
         pet.name,
         display_name(&pet.species),
         display_name(&pet.life_stage),
         display_name(&pet.mood),
+        pet.level,
+        pet.experience,
+        pet.experience_for_next_level,
+        pet.experience_progress_milli / 10,
         display_name(&pet.activity),
         pet.age_ticks / 1_440,
         index + 1,
@@ -2171,7 +2265,9 @@ mod tests {
                 balance: 0,
                 clamped_offline_ticks: 0,
                 adopted_pets: 1,
-                max_adopted_pets: application::MAX_ADOPTED_PETS,
+                max_adopted_pets: application::BASE_ADOPTED_PETS,
+                maximum_adopted_pets: application::MAX_ADOPTED_PETS,
+                next_adoption_slot_cost: Some(100),
                 pets: vec![PetDto {
                     id: "pet-id".into(),
                     name: "Sparky".into(),
@@ -2181,6 +2277,10 @@ mod tests {
                     activity: "idle".into(),
                     alive: true,
                     age_ticks: 0,
+                    level: 1,
+                    experience: 0,
+                    experience_for_next_level: 100,
+                    experience_progress_milli: 0,
                     needs: vec![NeedDto {
                         kind: "hunger".into(),
                         value_milli: 82_000,

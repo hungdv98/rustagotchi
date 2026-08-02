@@ -14,7 +14,30 @@ use crate::queries::{ContentQuery, Query};
 use crate::{AppError, GameState, SaveError};
 
 /// Founder pets are adopted directly; later generations come from breeding.
-pub const MAX_ADOPTED_PETS: usize = 2;
+pub const BASE_ADOPTED_PETS: usize = 2;
+pub const MAX_ADOPTED_PETS: usize = 8;
+pub const MAX_ADOPTION_SLOT_UPGRADES: u8 = (MAX_ADOPTED_PETS - BASE_ADOPTED_PETS) as u8;
+const ADOPTION_SLOT_COSTS: [i64; MAX_ADOPTION_SLOT_UPGRADES as usize] =
+    [100, 200, 400, 800, 1_600, 3_200];
+
+#[must_use]
+pub const fn adopted_pet_capacity(upgrades: u8) -> usize {
+    let bounded = if upgrades > MAX_ADOPTION_SLOT_UPGRADES {
+        MAX_ADOPTION_SLOT_UPGRADES
+    } else {
+        upgrades
+    };
+    BASE_ADOPTED_PETS + bounded as usize
+}
+
+#[must_use]
+pub const fn next_adoption_slot_cost(upgrades: u8) -> Option<Currency> {
+    if upgrades >= MAX_ADOPTION_SLOT_UPGRADES {
+        None
+    } else {
+        Some(Currency(ADOPTION_SLOT_COSTS[upgrades as usize]))
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -28,6 +51,7 @@ pub enum Command {
     ResetGame {
         slot: SaveSlotId,
     },
+    UnlockAdoptionSlot,
     AdvanceTo {
         wall_now: UnixSeconds,
     },
@@ -111,6 +135,7 @@ impl<R: SaveRepository> GameEngine<R> {
             Command::CreatePet { species, name } => self.create_pet(species, name),
             Command::ReleasePet { pet } => self.release_pet(pet),
             Command::ResetGame { slot } => self.reset_game(slot),
+            Command::UnlockAdoptionSlot => self.unlock_adoption_slot(),
             Command::AdvanceTo { wall_now } => self.advance_to(wall_now),
             Command::FeedPet { pet, item } => self.feed_pet(pet, item),
             Command::Breed { first, second } => self.breed(first, second),
@@ -141,9 +166,10 @@ impl<R: SaveRepository> GameEngine<R> {
             .values()
             .filter(|pet| pet.parentage.is_founder())
             .count();
-        if adopted >= MAX_ADOPTED_PETS {
+        let capacity = adopted_pet_capacity(self.state.adoption_slot_upgrades);
+        if adopted >= capacity {
             return Err(AppError::Domain(format!(
-                "a world can adopt at most {MAX_ADOPTED_PETS} pets"
+                "all {capacity} adoption slots are full; unlock another slot with coins"
             )));
         }
         if self.content.get_species(&species).is_none() {
@@ -238,6 +264,21 @@ impl<R: SaveRepository> GameEngine<R> {
         let wall_now = self.state.clock.anchored_at();
         self.state = GameState::new(seed, wall_now);
         Ok(vec![DomainEvent::WorldReset])
+    }
+
+    fn unlock_adoption_slot(&mut self) -> Result<Vec<DomainEvent>, AppError> {
+        let upgrades = self.state.adoption_slot_upgrades;
+        let cost = next_adoption_slot_cost(upgrades)
+            .ok_or_else(|| AppError::Domain("all adoption slots are already unlocked".into()))?;
+        self.state.wallet.withdraw(cost).map_err(|_| {
+            AppError::Domain(format!(
+                "you need {} coins to unlock the next adoption slot (balance: {})",
+                cost.0,
+                self.state.wallet.balance().0
+            ))
+        })?;
+        self.state.adoption_slot_upgrades = upgrades.saturating_add(1);
+        Ok(Vec::new())
     }
 
     pub fn advance_to(&mut self, wall_now: UnixSeconds) -> Result<Vec<DomainEvent>, AppError> {
@@ -487,7 +528,7 @@ impl<R: SaveRepository> GameEngine<R> {
             .pets
             .get_mut(&result.winner)
             .ok_or_else(|| AppError::Domain("battle winner no longer exists".into()))?;
-        winner.progression.grant(WIN_EXPERIENCE);
+        let levels_gained = winner.progression.grant(WIN_EXPERIENCE);
         self.state.active_battles.remove(&battle_id);
         let mut events = result
             .events
@@ -501,6 +542,7 @@ impl<R: SaveRepository> GameEngine<R> {
                 loser: result.loser,
                 coins: WIN_COINS.0,
                 experience: WIN_EXPERIENCE.0,
+                levels_gained,
             }
             .into(),
         );
@@ -656,7 +698,7 @@ mod tests {
                 name: PetName::new("Bubbles").unwrap(),
             })
             .unwrap();
-        assert_eq!(engine.state.simulation.pets.len(), MAX_ADOPTED_PETS);
+        assert_eq!(engine.state.simulation.pets.len(), BASE_ADOPTED_PETS);
 
         let slot = SaveSlotId::derive(seed, Tick::ZERO, 99);
         let events = engine.dispatch(Command::ResetGame { slot }).unwrap();
@@ -664,6 +706,34 @@ mod tests {
         assert!(engine.state.simulation.pets.is_empty());
         assert!(engine.state.inventory.is_empty());
         assert_eq!(engine.state.simulation.tick, Tick::ZERO);
+    }
+
+    #[test]
+    fn adoption_slots_have_escalating_prices_and_failed_purchases_are_atomic() {
+        let seed = WorldSeed(17);
+        let mut state = GameState::new(seed, UnixSeconds::EPOCH);
+        state.wallet = domain::economy::Wallet::with_balance(Currency(350));
+        let assets = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let content = content::ContentLoader::load(&assets).unwrap();
+        let config = simulation::SimConfig::from_ron(
+            &std::fs::read_to_string(assets.join("config/simulation.ron")).unwrap(),
+        )
+        .unwrap();
+        let mut engine = GameEngine::new(state, content, config, NoSaves);
+
+        engine.dispatch(Command::UnlockAdoptionSlot).unwrap();
+        assert_eq!(engine.state.adoption_slot_upgrades, 1);
+        assert_eq!(engine.state.wallet.balance(), Currency(250));
+        assert_eq!(adopted_pet_capacity(1), 3);
+
+        engine.dispatch(Command::UnlockAdoptionSlot).unwrap();
+        assert_eq!(engine.state.adoption_slot_upgrades, 2);
+        assert_eq!(engine.state.wallet.balance(), Currency(50));
+        assert_eq!(next_adoption_slot_cost(2), Some(Currency(400)));
+
+        assert!(engine.dispatch(Command::UnlockAdoptionSlot).is_err());
+        assert_eq!(engine.state.adoption_slot_upgrades, 2);
+        assert_eq!(engine.state.wallet.balance(), Currency(50));
     }
 
     #[test]
@@ -829,6 +899,26 @@ mod tests {
 
         assert!(engine.state.active_battles.is_empty());
         assert_eq!(engine.state.wallet.balance(), Currency(50));
+        let winner = events.iter().find_map(|event| match event {
+            DomainEvent::Combat(CombatEvent::BattleWon {
+                winner,
+                levels_gained,
+                ..
+            }) => Some((*winner, *levels_gained)),
+            _ => None,
+        });
+        let (winner, levels_gained) = winner.expect("battle won event");
+        assert_eq!(levels_gained, 1);
+        assert_eq!(
+            engine
+                .state
+                .simulation
+                .pet(winner)
+                .unwrap()
+                .progression
+                .level(),
+            domain::pet::Level::new(2)
+        );
         assert!(events.iter().any(|event| matches!(
             event,
             DomainEvent::Combat(CombatEvent::BattleWon { battle: id, .. }) if *id == battle

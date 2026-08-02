@@ -71,6 +71,7 @@ pub enum CombatEvent {
         loser: PetId,
         coins: i64,
         experience: u32,
+        levels_gained: u16,
     },
     StatusApplied {
         target: PetId,

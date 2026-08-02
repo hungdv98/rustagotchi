@@ -8,7 +8,7 @@ use crate::feedback;
 use crate::performance;
 use crate::resources::{ActiveSaveSlot, EngineResource, PetSelection};
 use crate::screens;
-use crate::{AppState, GameViewModel};
+use crate::{AppState, BattleResultView, GameViewModel};
 
 #[derive(Debug, Default)]
 pub struct RustagotchiPresentationPlugin;
@@ -187,6 +187,7 @@ fn record_command_success(command: &Command, view: &mut GameViewModel) {
         Command::CreatePet { .. } => Some("Pet adopted."),
         Command::ReleasePet { .. } => Some("Pet released."),
         Command::ResetGame { .. } => Some("Game reset. Adopt a new companion."),
+        Command::UnlockAdoptionSlot => Some("Adoption slot unlocked."),
         Command::AdvanceTo { .. } => None,
         Command::FeedPet { .. } => Some("Pet fed successfully."),
         Command::Breed { .. } => Some("Egg created."),
@@ -216,18 +217,25 @@ fn record_battle_result(
                 winner,
                 coins,
                 experience,
+                levels_gained,
                 ..
             }) => {
-                let winner_name = view
-                    .summary
-                    .as_ref()
-                    .and_then(|summary| {
-                        summary.pets.iter().find(|pet| pet.id == winner.to_string())
-                    })
-                    .map_or_else(|| "Unknown pet".into(), |pet| pet.name.clone());
-                view.last_battle_result = Some(format!(
-                    "Winner: {winner_name}\nRewards: {coins} coins and {experience} experience"
-                ));
+                let Some(summary) = &view.summary else {
+                    continue;
+                };
+                let Some(pet) = summary.pets.iter().find(|pet| pet.id == winner.to_string()) else {
+                    continue;
+                };
+                view.last_battle_result = Some(BattleResultView {
+                    winner_name: pet.name.clone(),
+                    coins_earned: *coins,
+                    balance: summary.balance,
+                    experience_earned: *experience,
+                    level: pet.level,
+                    experience: pet.experience,
+                    experience_for_next_level: pet.experience_for_next_level,
+                    levels_gained: *levels_gained,
+                });
             }
             _ => {}
         }

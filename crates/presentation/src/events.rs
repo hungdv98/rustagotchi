@@ -80,9 +80,19 @@ impl CommandFailed {
                 Some("These pets are too closely related to breed.")
             }
             (Command::CreatePet { .. }, AppError::Domain(detail))
-                if detail.starts_with("a world can adopt at most") =>
+                if detail.starts_with("all ") && detail.contains("adoption slots are full") =>
             {
-                Some("Adoption slots are full. Release an adopted pet first.")
+                Some("Adoption slots are full. Unlock another with coins or release a pet.")
+            }
+            (Command::UnlockAdoptionSlot, AppError::Domain(detail))
+                if detail.starts_with("you need ") =>
+            {
+                Some("Not enough coins yet. Win battles to fund this upgrade.")
+            }
+            (Command::UnlockAdoptionSlot, AppError::Domain(detail))
+                if detail == "all adoption slots are already unlocked" =>
+            {
+                Some("All adoption slots are already unlocked.")
             }
             (Command::ReleasePet { .. }, AppError::Domain(detail))
                 if detail == "a pet in an active battle cannot be released" =>

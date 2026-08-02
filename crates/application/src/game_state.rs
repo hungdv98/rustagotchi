@@ -22,6 +22,9 @@ pub struct GameState {
     pub simulation: SimulationState,
     pub inventory: Inventory,
     pub wallet: Wallet,
+    /// Permanent adoption-capacity upgrades bought with coins.
+    #[serde(default)]
+    pub adoption_slot_upgrades: u8,
     #[serde(default)]
     pub eggs: BTreeMap<EggId, Egg>,
     #[serde(default)]
@@ -34,13 +37,14 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub const SCHEMA_VERSION: u32 = 4;
+    pub const SCHEMA_VERSION: u32 = 5;
     #[must_use]
     pub fn new(seed: WorldSeed, wall_now: UnixSeconds) -> Self {
         Self {
             simulation: SimulationState::new(seed),
             inventory: Inventory::default(),
             wallet: Wallet::default(),
+            adoption_slot_upgrades: 0,
             eggs: BTreeMap::new(),
             breeding_cooldowns: BTreeMap::new(),
             active_battles: BTreeMap::new(),
@@ -56,7 +60,7 @@ impl GameState {
 
     pub fn migrate_from(mut self, source_schema: u32) -> Result<Self, String> {
         match source_schema {
-            1..=3 => {
+            1..=4 => {
                 self.metadata.schema_version = Self::SCHEMA_VERSION;
                 Ok(self)
             }
@@ -84,6 +88,9 @@ impl GameState {
         }
         if self.wallet.balance().0 < 0 {
             return Err("wallet balance is negative".into());
+        }
+        if self.adoption_slot_upgrades > crate::MAX_ADOPTION_SLOT_UPGRADES {
+            return Err("adoption slot upgrades exceed the supported maximum".into());
         }
         for (id, egg) in &self.eggs {
             if *id != egg.id {

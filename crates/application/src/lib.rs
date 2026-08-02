@@ -25,6 +25,9 @@ pub mod ports;
 pub mod queries;
 
 pub use error::{AppError, SaveError, SeedError};
-pub use game_engine::{Command, GameEngine, MAX_ADOPTED_PETS};
+pub use game_engine::{
+    BASE_ADOPTED_PETS, Command, GameEngine, MAX_ADOPTED_PETS, MAX_ADOPTION_SLOT_UPGRADES,
+    adopted_pet_capacity, next_adoption_slot_cost,
+};
 pub use game_state::{GameState, SaveMetadata};
 pub use queries::{BattleSetupQuery, ContentQuery, GameSummaryQuery, Query};
